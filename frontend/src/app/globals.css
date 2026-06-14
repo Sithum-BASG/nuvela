@@ -1,0 +1,219 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Nuvela design tokens — values are sourced verbatim from the Figma
+   Foundations page (file Ff1qt7PSxze0Y5I49xfy70, node 173:2) via the Figma MCP.
+   Do NOT hard-code these hexes anywhere else — components consume the variables. */
+@theme inline {
+  /* fonts: Sora = display/headings, Roboto = UI/body (Design Brief) */
+  --font-sans: var(--font-roboto);
+  --font-display: var(--font-sora);
+  --font-heading: var(--font-sora);
+
+  /* shadcn role tokens → Nuvela values (set in :root/.dark below) */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Nuvela semantic palette (exposed as utilities: bg-accent-tint, text-success, …) */
+  --color-surface-muted: var(--surface-muted);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent-tint: var(--accent-tint);
+  --color-accent-strong: var(--accent-strong);
+  --color-focus-ring: var(--focus-ring);
+  --color-info: var(--info);
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-priority-low: var(--priority-low);
+  --color-priority-low-tint: var(--priority-low-tint);
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-medium-tint: var(--priority-medium-tint);
+  --color-priority-high: var(--priority-high);
+  --color-priority-high-tint: var(--priority-high-tint);
+  --color-status-active: var(--status-active);
+  --color-status-pending: var(--status-pending);
+  --color-status-deactivated: var(--status-deactivated);
+  --color-label-accent: var(--label-accent);
+  --color-label-success: var(--label-success);
+  --color-label-warning: var(--label-warning);
+  --color-label-danger: var(--label-danger);
+  --color-avatar-teal: var(--avatar-teal);
+  --color-avatar-blue: var(--avatar-blue);
+  --color-avatar-violet: var(--avatar-violet);
+
+  /* radii (Design Brief: control 8 / card 12 / badge 6) */
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-badge: 6px;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  /* neutrals — light */
+  --background: #f8f9fb;          /* color/bg */
+  --foreground: #0a1422;          /* color/text-primary */
+  --card: #ffffff;                /* color/surface */
+  --card-foreground: #0a1422;
+  --popover: #ffffff;
+  --popover-foreground: #0a1422;
+  --surface-muted: #f8f9fb;       /* color/surface-muted */
+  --text-secondary: #5f5e5a;
+  --text-muted: #8c8b85;
+  --border: #e4e6ea;              /* color/border */
+  --input: #e4e6ea;
+
+  /* brand accent */
+  --primary: #7c74d6;             /* color/accent */
+  --primary-foreground: #ffffff;
+  --accent-tint: #edebfb;         /* color/accent-tint */
+  --accent-strong: #5a52b5;       /* color/accent-strong (links/accent text) */
+  --focus-ring: #7c74d6;
+  --ring: #7c74d6;
+  --info: #7c74d6;
+
+  /* shadcn neutral "accent" (hover/selected wash) → accent-tint */
+  --accent: #edebfb;
+  --accent-foreground: #5a52b5;
+  /* secondary (outline) buttons = surface + border */
+  --secondary: #ffffff;
+  --secondary-foreground: #0a1422;
+  --muted: #f8f9fb;
+  --muted-foreground: #5f5e5a;
+  --destructive: #c53030;         /* color/danger */
+
+  /* functional — light */
+  --success: #2f855a;       --success-tint: #eaf6f0;
+  --warning: #b7791f;       --warning-tint: #fff4d8;
+  --danger:  #c53030;       --danger-tint:  #fdeaea;
+  --priority-low: #2f855a;     --priority-low-tint: #eaf6f0;
+  --priority-medium: #b7791f;  --priority-medium-tint: #fff4d8;
+  --priority-high: #c53030;    --priority-high-tint: #fdeaea;
+  --status-active: #2f855a;
+  --status-pending: #b7791f;
+  --status-deactivated: #8c8b85;
+  --label-accent: #5a52b5;
+  --label-success: #2f855a;
+  --label-warning: #b7791f;
+  --label-danger: #c53030;
+  --avatar-teal: #4ba7a0;
+  --avatar-blue: #6687e8;
+  --avatar-violet: #7c74d6;
+
+  --radius: 0.625rem;             /* control radius ≈ md (8px) */
+
+  /* sidebar (chrome) — light */
+  --sidebar: #f8f9fb;
+  --sidebar-foreground: #0a1422;
+  --sidebar-primary: #7c74d6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #edebfb;
+  --sidebar-accent-foreground: #5a52b5;
+  --sidebar-border: #e4e6ea;
+  --sidebar-ring: #7c74d6;
+}
+
+.dark {
+  /* neutrals — dark */
+  --background: #16181d;
+  --foreground: #ededeb;
+  --card: #1d2027;
+  --card-foreground: #ededeb;
+  --popover: #1d2027;
+  --popover-foreground: #ededeb;
+  --surface-muted: #16181d;
+  --text-secondary: #b4b2a9;
+  --text-muted: #888780;
+  --border: #2a2d34;
+  --input: #2a2d34;
+
+  /* brand accent — dark (brightened) */
+  --primary: #8b83e0;             /* color/accent (dark) */
+  --primary-foreground: #ffffff;
+  --accent-tint: #272341;         /* color/accent-tint (dark) */
+  --accent-strong: #a79fea;       /* color/accent-strong (dark) */
+  --focus-ring: #8b83e0;
+  --ring: #8b83e0;
+  --info: #7c74d6;
+
+  --accent: #272341;
+  --accent-foreground: #a79fea;
+  --secondary: #1d2027;
+  --secondary-foreground: #ededeb;
+  --muted: #16181d;
+  --muted-foreground: #b4b2a9;
+  --destructive: #c53030;
+
+  /* functional — dark (bases mode-independent; tints darken) */
+  --success: #2f855a;       --success-tint: #183728;
+  --warning: #b7791f;       --warning-tint: #3a2a12;
+  --danger:  #c53030;       --danger-tint:  #3a1818;
+  --priority-low: #2f855a;     --priority-low-tint: #183728;
+  --priority-medium: #b7791f;  --priority-medium-tint: #3a2a12;
+  --priority-high: #c53030;    --priority-high-tint: #3a1818;
+  --status-active: #2f855a;
+  --status-pending: #b7791f;
+  --status-deactivated: #888780;
+  --label-accent: #a79fea;
+  --label-success: #2f855a;
+  --label-warning: #b7791f;
+  --label-danger: #c53030;
+  --avatar-teal: #4ba7a0;
+  --avatar-blue: #6687e8;
+  --avatar-violet: #7c74d6;
+
+  /* sidebar (chrome) — dark */
+  --sidebar: #16181d;
+  --sidebar-foreground: #ededeb;
+  --sidebar-primary: #8b83e0;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #272341;
+  --sidebar-accent-foreground: #a79fea;
+  --sidebar-border: #2a2d34;
+  --sidebar-ring: #8b83e0;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}

@@ -1,0 +1,27 @@
+# deps
+node_modules/
+
+# builds
+dist/
+.next/
+out/
+build/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# agent guidance + planning context (kept local, not published)
+CLAUDE.md
+AGENTS.md
+CURRENT_STEP.md
+PRODUCT.md
+.cursor/
+.claude/
+docs/
+
+# misc
+*.log
+.DS_Store
+coverage/

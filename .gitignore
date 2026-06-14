@@ -16,6 +16,7 @@ build/
 CLAUDE.md
 AGENTS.md
 CURRENT_STEP.md
+PRODUCT.md
 .cursor/
 .claude/
 docs/

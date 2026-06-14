@@ -1,6 +1,4 @@
 # Nuvela backend — multi-stage build for Render.
-# NOTE (Phase 0): no Prisma schema exists yet. Phase 1 adds `RUN npx prisma generate`
-# in the build stage and copies the generated client into the runtime stage.
 
 # --- build stage ---
 FROM node:20-alpine AS build
@@ -8,6 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+RUN npx prisma generate
 RUN npm run build
 
 # --- runtime stage ---
@@ -17,5 +16,7 @@ ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build /app/prisma ./prisma
 EXPOSE 3000
 CMD ["node", "dist/main.js"]

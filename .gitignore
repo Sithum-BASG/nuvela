@@ -1,0 +1,21 @@
+# deps
+node_modules/
+
+# builds
+dist/
+.next/
+out/
+build/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# local tooling / editor
+.claude/settings.local.json
+
+# misc
+*.log
+.DS_Store
+coverage/

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(./build.ps1)",
+      "Bash(git --version)",
+      "Bash(npm --version)",
+      "Bash(gh --version)",
+      "Bash(Select-Object -First 1)",
+      "Bash(docker --version)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); $g = Get-Command gh -ErrorAction SilentlyContinue; if \\($g\\) { gh --version } else { \"gh still not on PATH this session\" })"
+    ]
+  }
+}

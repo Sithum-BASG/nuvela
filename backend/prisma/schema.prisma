@@ -1,0 +1,258 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")      // Supabase pooled
+  directUrl = env("DIRECT_URL")        // Supabase direct (migrations)
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  PROJECT_MANAGER
+  COLLABORATOR
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  DEACTIVATED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  STATUS_CHANGED
+  MENTION
+  DEADLINE
+  PROJECT_TRANSFERRED
+}
+
+enum ActivityType {
+  STATUS_CHANGED
+  ASSIGNED
+  UNASSIGNED
+  FIELD_CHANGED
+  CHECKLIST_CHECKED
+  CHECKLIST_UNCHECKED
+  ATTACHMENT_ADDED
+  COMMENT_ADDED
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  ownerId   String?
+  owner     User?    @relation("OrgOwner", fields: [ownerId], references: [id])
+  users     User[]   @relation("OrgUsers")
+  projects  Project[]
+  tasks     Task[]
+  notifications Notification[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id                    String   @id @default(uuid())
+  organizationId        String
+  organization          Organization @relation("OrgUsers", fields: [organizationId], references: [id])
+  email                 String
+  name                  String
+  passwordHash          String
+  role                  Role
+  status                UserStatus   @default(PENDING)
+  emailVerified         Boolean      @default(false)
+  mustResetPassword     Boolean      @default(false)
+  tempPasswordExpiresAt DateTime?
+  ownedOrg              Organization[] @relation("OrgOwner")
+  managedProjects       Project[]      @relation("ProjectManager")
+  memberships           ProjectMember[]
+  assignments           TaskAssignee[]
+  comments              Comment[]
+  mentions              CommentMention[]
+  attachments           Attachment[]
+  activities            ActivityLog[]
+  notifications         Notification[]
+  refreshTokens         RefreshToken[]
+  createdTasks          Task[]         @relation("TaskCreator")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  @@unique([organizationId, email])
+}
+
+model Project {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  description    String?
+  color          String
+  status         ProjectStatus @default(ACTIVE)
+  managerId      String
+  manager        User     @relation("ProjectManager", fields: [managerId], references: [id])
+  members        ProjectMember[]
+  columns        Column[]
+  tasks          Task[]
+  labels         Label[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ProjectMember {
+  id        String  @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  @@unique([projectId, userId])
+}
+
+model Column {
+  id                String  @id @default(uuid())
+  projectId         String
+  project           Project @relation(fields: [projectId], references: [id])
+  name              String
+  position          Int
+  isCompletedColumn Boolean @default(false)
+  isPmGated         Boolean @default(false)
+  tasks             Task[]
+}
+
+model Task {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  projectId      String
+  project        Project  @relation(fields: [projectId], references: [id])
+  columnId       String
+  column         Column   @relation(fields: [columnId], references: [id])
+  title          String
+  description    String?
+  priority       Priority @default(MEDIUM)
+  dueDate        DateTime?
+  position       Int
+  createdById    String
+  createdBy      User     @relation("TaskCreator", fields: [createdById], references: [id])
+  assignees      TaskAssignee[]
+  labels         TaskLabel[]
+  checklist      ChecklistItem[]
+  comments       Comment[]
+  attachments    Attachment[]
+  activities     ActivityLog[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model TaskAssignee {
+  id     String @id @default(uuid())
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  @@unique([taskId, userId])
+}
+
+model Label {
+  id        String @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+  name      String
+  color     String
+  tasks     TaskLabel[]
+}
+
+model TaskLabel {
+  id      String @id @default(uuid())
+  taskId  String
+  task    Task   @relation(fields: [taskId], references: [id])
+  labelId String
+  label   Label  @relation(fields: [labelId], references: [id])
+  @@unique([taskId, labelId])
+}
+
+model ChecklistItem {
+  id        String  @id @default(uuid())
+  taskId    String
+  task      Task    @relation(fields: [taskId], references: [id])
+  text      String
+  isChecked Boolean @default(false)
+  position  Int
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  mentions  CommentMention[]
+  createdAt DateTime @default(now())
+}
+
+model CommentMention {
+  id        String  @id @default(uuid())
+  commentId String
+  comment   Comment @relation(fields: [commentId], references: [id])
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+}
+
+model Attachment {
+  id           String   @id @default(uuid())
+  taskId       String
+  task         Task     @relation(fields: [taskId], references: [id])
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  fileName     String
+  mimeType     String
+  sizeBytes    Int
+  storageKey   String
+  createdAt    DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String       @id @default(uuid())
+  taskId    String
+  task      Task         @relation(fields: [taskId], references: [id])
+  actorId   String
+  actor     User         @relation(fields: [actorId], references: [id])
+  type      ActivityType
+  metadata  Json?
+  createdAt DateTime     @default(now())
+}
+
+model Notification {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  recipientId    String
+  recipient      User     @relation(fields: [recipientId], references: [id])
+  type           NotificationType
+  payload        Json
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+}

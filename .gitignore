@@ -12,8 +12,13 @@ build/
 .env.*
 !.env.example
 
-# local tooling / editor
-.claude/settings.local.json
+# agent guidance + planning context (kept local, not published)
+CLAUDE.md
+AGENTS.md
+CURRENT_STEP.md
+.cursor/
+.claude/
+docs/
 
 # misc
 *.log

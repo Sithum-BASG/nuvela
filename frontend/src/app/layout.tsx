@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sora, Roboto } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 
 // Sora = display/headings, Roboto = UI/body (Design Brief typography)
@@ -33,7 +34,9 @@ export default function RootLayout({
       className={`${sora.variable} ${roboto.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </ThemeProvider>
       </body>
     </html>
   );

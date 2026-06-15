@@ -1,0 +1,12 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#nuvela_clip)">
+    <rect width="40" height="40" rx="13" fill="#7C74D6"/>
+    <path d="M26.4 0C17 11.8 17 28.2 26.4 40H40.5V0H26.4Z" fill="#5A52B5"/>
+    <path d="M12 28V12L28 28V12" stroke="white" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <defs>
+    <clipPath id="nuvela_clip">
+      <rect width="40" height="40" rx="13" fill="white"/>
+    </clipPath>
+  </defs>
+</svg>

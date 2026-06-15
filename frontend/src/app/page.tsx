@@ -1,27 +1,17 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { getHealth } from "@/lib/api";
 
-// Phase 2 cross-origin proof — replaced by the real splash screen in Phase 3.
-export default function Home() {
-  const [health, setHealth] = useState<string>("…");
-  useEffect(() => {
-    getHealth()
-      .then((h) => setHealth(h.status))
-      .catch(() => setHealth("unreachable"));
-  }, []);
+import { Loader2 } from "lucide-react";
 
+import { LogoLockup } from "@/components/logo";
+
+// Splash (/): the auth provider handles all redirects from this route
+// (authenticated → /dashboard, unauthenticated → /login). This page is purely
+// a branded loading moment shown while the session resolves.
+export default function SplashPage() {
   return (
-    <main className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center gap-6">
-      <h1 className="font-display text-2xl font-semibold">Nuvela</h1>
-      <div className="flex items-center gap-3">
-        <Button>Primary</Button>
-        <Button variant="outline">Secondary</Button>
-        <ThemeToggle />
-      </div>
-      <p className="text-sm text-muted-foreground">backend: {health}</p>
+    <main className="flex min-h-screen flex-col items-center justify-center gap-10 bg-background">
+      <LogoLockup />
+      <Loader2 className="size-5 animate-spin text-primary" aria-label="Loading" />
     </main>
   );
 }

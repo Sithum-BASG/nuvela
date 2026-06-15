@@ -49,6 +49,15 @@ export type LoginResult = {
   };
 };
 
+export type CurrentUserResult = {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  organizationId: string;
+  mustResetPassword: boolean;
+};
+
 export type ProvisionUserInput = {
   organizationId: string;
   email: string;
@@ -157,6 +166,29 @@ export class AuthService {
         mustResetPassword: user.mustResetPassword,
       },
     };
+  }
+
+  async getCurrentUser(userId: string): Promise<CurrentUserResult> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        organizationId: true,
+        mustResetPassword: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException({
+        code: 'INVALID_SESSION',
+        message: 'Session user was not found.',
+      });
+    }
+
+    return user;
   }
 
   async provisionUser(input: ProvisionUserInput): Promise<User> {

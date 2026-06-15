@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   Post,
   Req,
@@ -15,13 +16,17 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { AllowWhileMustReset } from '../common/decorators/allow-while-must-reset.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { AuthService } from './auth.service';
-import type { AuthenticatedUser, LoginResult } from './auth.service';
+import type {
+  AuthenticatedUser,
+  CurrentUserResult,
+  LoginResult,
+} from './auth.service';
 import { FirstLoginResetPasswordDto } from './dto/first-login-reset-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
@@ -42,6 +47,30 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly tokenService: TokenService,
   ) {}
+
+  @Get('me')
+  @AllowWhileMustReset()
+  @SkipThrottle()
+  @ApiOperation({ summary: 'Return the current authenticated user.' })
+  @ApiOkResponse({
+    description: 'Current authenticated user.',
+    schema: {
+      example: {
+        id: 'user-id',
+        name: 'Maya Fernando',
+        email: 'maya@example.com',
+        role: 'OWNER',
+        organizationId: 'org-id',
+        mustResetPassword: false,
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Missing, invalid, expired, or stale session cookie.',
+  })
+  async me(@CurrentUser() user: AuthenticatedUser): Promise<CurrentUserResult> {
+    return this.authService.getCurrentUser(user.userId);
+  }
 
   @Public()
   @Post('signup')

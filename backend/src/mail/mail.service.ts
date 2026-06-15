@@ -26,6 +26,20 @@ export class MailService {
     );
   }
 
+  async sendTempPasswordEmail(
+    to: string,
+    tempPassword: string,
+    link: string,
+  ): Promise<void> {
+    const safePassword = escapeHtml(tempPassword);
+    const safeLink = escapeHtml(link);
+    await this.sendEmail(
+      to,
+      'Your Nuvela temporary password',
+      `<p>Your Nuvela account is ready.</p><p>Temporary password: <strong>${safePassword}</strong></p><p>Log in here: <a href="${safeLink}">${safeLink}</a></p>`,
+    );
+  }
+
   private async sendEmail(
     to: string,
     subject: string,

@@ -1,4 +1,12 @@
-import { Body, Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -7,7 +15,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
+import { AllowWhileMustReset } from '../common/decorators/allow-while-must-reset.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { AuthService } from './auth.service';
@@ -25,6 +35,7 @@ type RequestWithCookies = Request & {
 };
 
 @ApiTags('auth')
+@UseGuards(ThrottlerGuard)
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -106,6 +117,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(200)
+  @AllowWhileMustReset()
   @ApiOperation({ summary: 'Log out and clear auth cookies.' })
   @ApiOkResponse({ description: 'Logged out.' })
   async logout(
@@ -119,6 +131,7 @@ export class AuthController {
 
   @Post('first-login/reset-password')
   @HttpCode(200)
+  @AllowWhileMustReset()
   @ApiOperation({
     summary: 'Reset an Admin-provisioned first-login password.',
   })

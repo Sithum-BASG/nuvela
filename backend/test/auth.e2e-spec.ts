@@ -1,21 +1,34 @@
 import type { INestApplication } from '@nestjs/common';
-import { ValidationPipe } from '@nestjs/common';
+import { Controller, Get, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { TestingModule } from '@nestjs/testing';
+import { Role } from '@prisma/client';
 import cookieParser from 'cookie-parser';
+import { randomUUID } from 'crypto';
 import request from 'supertest';
 import type { Response as SupertestResponse } from 'supertest';
 import { AppModule } from '../src/app.module';
+import { AuthService } from '../src/auth/auth.service';
 import { MailService } from '../src/mail/mail.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+
+@Controller('test-protected')
+class TestProtectedController {
+  @Get()
+  check(): { ok: boolean } {
+    return { ok: true };
+  }
+}
 
 describe('Auth endpoints (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let authService: AuthService;
 
   const mailServiceMock = {
     sendVerificationEmail: jest.fn<Promise<void>, [string, string]>(),
     sendPasswordResetEmail: jest.fn<Promise<void>, [string, string]>(),
+    sendTempPasswordEmail: jest.fn<Promise<void>, [string, string, string]>(),
   };
 
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -35,6 +48,7 @@ describe('Auth endpoints (e2e)', () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
+      controllers: [TestProtectedController],
     })
       .overrideProvider(MailService)
       .useValue(mailServiceMock)
@@ -48,6 +62,7 @@ describe('Auth endpoints (e2e)', () => {
     await app.init();
 
     prisma = app.get(PrismaService);
+    authService = app.get(AuthService);
   });
 
   afterAll(async () => {
@@ -189,6 +204,76 @@ describe('Auth endpoints (e2e)', () => {
       .expect(200);
     expect(mailServiceMock.sendPasswordResetEmail).not.toHaveBeenCalled();
   }, 30000);
+
+  describe('MustResetPassword guard flow', () => {
+    jest.setTimeout(30000);
+
+    it('blocks protected routes until the first-login password reset clears the flag', async () => {
+      const mustResetSuffix = randomUUID();
+      const mustResetEmail = `must-reset-${mustResetSuffix}@example.com`;
+      const newPassword = 'NewPassw0rd!';
+
+      const organization = await prisma.organization.create({
+        data: { name: `Must Reset Org ${mustResetSuffix}` },
+      });
+      createdOrganizationIds.push(organization.id);
+
+      const user = await authService.provisionUser({
+        organizationId: organization.id,
+        email: mustResetEmail,
+        name: 'Must Reset User',
+        role: Role.ADMIN,
+      });
+      createdUserIds.push(user.id);
+
+      expect(user.mustResetPassword).toBe(true);
+      expect(user.tempPasswordExpiresAt).toBeInstanceOf(Date);
+      expect(mailServiceMock.sendTempPasswordEmail).toHaveBeenCalledWith(
+        mustResetEmail,
+        expect.any(String),
+        'http://localhost:3000/login',
+      );
+
+      const tempPassword =
+        mailServiceMock.sendTempPasswordEmail.mock.calls[0][1];
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ email: mustResetEmail, password: tempPassword })
+        .expect(200);
+
+      expect(
+        responseBody<{ mustResetPassword: boolean }>(loginResponse)
+          .mustResetPassword,
+      ).toBe(true);
+
+      const authCookies = cookieHeader(loginResponse);
+      const blockedResponse = await request(app.getHttpServer())
+        .get('/test-protected')
+        .set('Cookie', authCookies)
+        .expect(403);
+
+      expect(responseBody<{ code: string }>(blockedResponse).code).toBe(
+        'MUST_RESET_PASSWORD',
+      );
+
+      await request(app.getHttpServer())
+        .post('/auth/first-login/reset-password')
+        .set('Cookie', authCookies)
+        .send({ newPassword })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get('/test-protected')
+        .set('Cookie', authCookies)
+        .expect(200);
+
+      const updatedUser = await prisma.user.findUniqueOrThrow({
+        where: { id: user.id },
+        select: { mustResetPassword: true },
+      });
+      expect(updatedUser.mustResetPassword).toBe(false);
+    });
+  });
 });
 
 function cookieHeaders(response: SupertestResponse): string[] {

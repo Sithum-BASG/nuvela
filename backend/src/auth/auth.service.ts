@@ -12,6 +12,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   assertPasswordComplexity,
   comparePassword,
+  generateTempPassword,
   hashPassword,
 } from './password.util';
 import { TokenService } from './token.service';
@@ -46,6 +47,13 @@ export type LoginResult = {
     };
     mustResetPassword: boolean;
   };
+};
+
+export type ProvisionUserInput = {
+  organizationId: string;
+  email: string;
+  name: string;
+  role: Role;
 };
 
 @Injectable()
@@ -149,6 +157,33 @@ export class AuthService {
         mustResetPassword: user.mustResetPassword,
       },
     };
+  }
+
+  async provisionUser(input: ProvisionUserInput): Promise<User> {
+    const tempPassword = generateTempPassword();
+    const user = await this.prisma.user.create({
+      data: {
+        organizationId: input.organizationId,
+        email: input.email,
+        name: input.name,
+        role: input.role,
+        passwordHash: await hashPassword(tempPassword),
+        mustResetPassword: true,
+        status: UserStatus.PENDING,
+        emailVerified: true,
+        tempPasswordExpiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000),
+      },
+    });
+
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
+    await this.mailService.sendTempPasswordEmail(
+      input.email,
+      tempPassword,
+      `${frontendUrl.replace(/\/$/, '')}/login`,
+    );
+
+    return user;
   }
 
   async refresh(rawRefresh: string | undefined): Promise<AuthTokens> {

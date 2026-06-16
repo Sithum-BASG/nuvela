@@ -15,15 +15,21 @@ type MockPrisma = {
   user: {
     findFirst: jest.Mock;
     findFirstOrThrow: jest.Mock;
+    findMany: jest.Mock;
     create: jest.Mock;
     update: jest.Mock;
   };
   project: {
     findMany: jest.Mock;
+    update: jest.Mock;
+  };
+  projectMember: {
+    upsert: jest.Mock;
   };
   taskAssignee: {
     deleteMany: jest.Mock;
   };
+  $transaction: jest.Mock;
 };
 
 describe('UsersService', () => {
@@ -46,15 +52,21 @@ describe('UsersService', () => {
       user: {
         findFirst: jest.fn(),
         findFirstOrThrow: jest.fn(),
+        findMany: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
       },
       project: {
         findMany: jest.fn(),
+        update: jest.fn(),
+      },
+      projectMember: {
+        upsert: jest.fn(),
       },
       taskAssignee: {
         deleteMany: jest.fn(),
       },
+      $transaction: jest.fn(),
     };
     mailService = {
       sendTempPasswordEmail: jest.fn().mockResolvedValue(undefined),
@@ -167,6 +179,89 @@ describe('UsersService', () => {
     });
     expect(prisma.user.update).not.toHaveBeenCalled();
     expect(prisma.taskAssignee.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('blocks deactivation when transfers omit some owned projects', async () => {
+    prisma.user.findFirstOrThrow.mockResolvedValue({
+      ...userRow,
+      role: Role.PROJECT_MANAGER,
+    });
+    prisma.project.findMany.mockResolvedValue([
+      { id: 'project-1', name: 'Website Redesign' },
+      { id: 'project-2', name: 'Mobile App' },
+    ]);
+
+    await expect(
+      service.deactivateUser('org-1', 'user-1', {
+        transfers: [{ projectId: 'project-1', newManagerId: 'pm-2' }],
+      }),
+    ).resolves.toEqual({
+      done: false,
+      projects: [
+        { id: 'project-1', name: 'Website Redesign' },
+        { id: 'project-2', name: 'Mobile App' },
+      ],
+    });
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('transfers all owned projects then deactivates the PM', async () => {
+    prisma.user.findFirstOrThrow.mockResolvedValue({
+      ...userRow,
+      role: Role.PROJECT_MANAGER,
+    });
+    prisma.project.findMany.mockResolvedValue([
+      { id: 'project-1', name: 'Website Redesign' },
+      { id: 'project-2', name: 'Mobile App' },
+    ]);
+    // Both transfer targets are valid PMs/Owners in the org.
+    prisma.user.findMany.mockResolvedValue([{ id: 'pm-2' }, { id: 'pm-3' }]);
+    prisma.$transaction.mockImplementation((cb: (tx: unknown) => unknown) =>
+      cb({
+        projectMember: { upsert: jest.fn() },
+        project: { update: jest.fn() },
+      }),
+    );
+    prisma.taskAssignee.deleteMany.mockResolvedValue({ count: 0 });
+    prisma.user.update.mockResolvedValue({
+      ...userRow,
+      status: UserStatus.DEACTIVATED,
+    });
+
+    await expect(
+      service.deactivateUser('org-1', 'user-1', {
+        transfers: [
+          { projectId: 'project-1', newManagerId: 'pm-2' },
+          { projectId: 'project-2', newManagerId: 'pm-3' },
+        ],
+      }),
+    ).resolves.toEqual({ done: true });
+    expect(prisma.$transaction).toHaveBeenCalled();
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { status: UserStatus.DEACTIVATED },
+    });
+  });
+
+  it('rejects a transfer target that is not a PM/Owner', async () => {
+    prisma.user.findFirstOrThrow.mockResolvedValue({
+      ...userRow,
+      role: Role.PROJECT_MANAGER,
+    });
+    prisma.project.findMany.mockResolvedValue([
+      { id: 'project-1', name: 'Website Redesign' },
+    ]);
+    // No valid targets returned → the chosen target is invalid.
+    prisma.user.findMany.mockResolvedValue([]);
+
+    await expect(
+      service.deactivateUser('org-1', 'user-1', {
+        transfers: [{ projectId: 'project-1', newManagerId: 'collab-9' }],
+      }),
+    ).rejects.toMatchObject({
+      response: { code: 'INVALID_TRANSFER_TARGET' },
+    });
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 
   it('deactivates a PROJECT_MANAGER with no owned projects and unassigns tasks', async () => {

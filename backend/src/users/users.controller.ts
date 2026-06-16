@@ -22,6 +22,7 @@ import {
 } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
+import { DeactivateUserDto } from './dto/deactivate-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRow, UsersService } from './users.service';
 
@@ -104,8 +105,9 @@ export class UsersController {
   deactivateUser(
     @CurrentUser() user: CurrentUserPayload,
     @Param('id') userId: string,
+    @Body() dto: DeactivateUserDto,
   ): Promise<{ done: boolean; projects?: { id: string; name: string }[] }> {
-    return this.usersService.deactivateUser(user.organizationId, userId);
+    return this.usersService.deactivateUser(user.organizationId, userId, dto);
   }
 
   @Post(':id/resend-invite')

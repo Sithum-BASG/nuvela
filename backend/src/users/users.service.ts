@@ -9,6 +9,7 @@ import { generateTempPassword, hashPassword } from '../auth/password.util';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { DeactivateUserDto } from './dto/deactivate-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 export type UserRow = {
@@ -145,6 +146,7 @@ export class UsersService {
   async deactivateUser(
     orgId: string,
     userId: string,
+    dto: DeactivateUserDto = {},
   ): Promise<{ done: boolean; projects?: { id: string; name: string }[] }> {
     const user = await this.findUserInOrg(orgId, userId);
 
@@ -156,7 +158,7 @@ export class UsersService {
     }
 
     if (user.role === Role.PROJECT_MANAGER) {
-      const projects = await this.prisma.project.findMany({
+      const ownedProjects = await this.prisma.project.findMany({
         where: {
           managerId: userId,
           organizationId: orgId,
@@ -166,11 +168,66 @@ export class UsersService {
         orderBy: { createdAt: 'asc' },
       });
 
-      if (projects.length > 0) {
-        return { done: false, projects };
+      if (ownedProjects.length > 0) {
+        const transfers = dto.transfers ?? [];
+        const transferByProject = new Map(
+          transfers.map((t) => [t.projectId, t.newManagerId]),
+        );
+
+        // Every owned project must have a transfer target, or the deactivation
+        // is blocked and the caller is told which projects still need one.
+        const allCovered = ownedProjects.every((p) =>
+          transferByProject.has(p.id),
+        );
+        if (!allCovered) {
+          return { done: false, projects: ownedProjects };
+        }
+
+        // Each new manager must be a PM or Owner in the same org.
+        const targetIds = [...new Set(transferByProject.values())];
+        const validTargets = await this.prisma.user.findMany({
+          where: {
+            id: { in: targetIds },
+            organizationId: orgId,
+            role: { in: [Role.PROJECT_MANAGER, Role.OWNER] },
+          },
+          select: { id: true },
+        });
+        const validTargetIds = new Set(validTargets.map((t) => t.id));
+        for (const target of transferByProject.values()) {
+          if (!validTargetIds.has(target) || target === userId) {
+            throw new ConflictException({
+              code: 'INVALID_TRANSFER_TARGET',
+              message:
+                'Each project must transfer to another Project Manager or Owner.',
+            });
+          }
+        }
+
+        await this.prisma.$transaction(async (tx) => {
+          for (const project of ownedProjects) {
+            const newManagerId = transferByProject.get(project.id)!;
+            await tx.projectMember.upsert({
+              where: {
+                projectId_userId: {
+                  projectId: project.id,
+                  userId: newManagerId,
+                },
+              },
+              create: { projectId: project.id, userId: newManagerId },
+              update: {},
+            });
+            await tx.project.update({
+              where: { id: project.id },
+              data: { managerId: newManagerId },
+            });
+          }
+        });
       }
     }
 
+    // Soft-deactivate and auto-unassign the user's TaskAssignee rows across the
+    // org (their progress work elsewhere is released; Backend Schema §lifecycle).
     await this.prisma.taskAssignee.deleteMany({
       where: { userId, task: { organizationId: orgId } },
     });

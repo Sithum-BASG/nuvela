@@ -3,6 +3,7 @@ import { Sora, Roboto } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 // Sora = display/headings, Roboto = UI/body (Design Brief typography)
 const sora = Sora({
@@ -36,6 +37,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
             <AuthProvider>{children}</AuthProvider>
+            <Toaster />
           </ThemeProvider>
       </body>
     </html>

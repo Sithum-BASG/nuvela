@@ -103,11 +103,28 @@ export class AuthService {
       return owner;
     });
 
-    const verificationToken = await this.signPurposeToken(user.id, 'verify');
-    await this.mailService.sendVerificationEmail(
-      user.email,
-      this.buildFrontendLink('/verify-email', verificationToken),
-    );
+    // The verification email is essential — without it the Owner can never
+    // activate the account. If it can't be sent, roll back the just-created
+    // org + owner so no orphaned, unverifiable account is left behind and the
+    // user can retry cleanly. (This is a compensating rollback of a signup that
+    // never completed — not a hard delete of an established user.)
+    try {
+      const verificationToken = await this.signPurposeToken(user.id, 'verify');
+      await this.mailService.sendVerificationEmail(
+        user.email,
+        this.buildFrontendLink('/verify-email', verificationToken),
+      );
+    } catch (error) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.organization.update({
+          where: { id: user.organizationId },
+          data: { ownerId: null },
+        });
+        await tx.user.delete({ where: { id: user.id } });
+        await tx.organization.delete({ where: { id: user.organizationId } });
+      });
+      throw error;
+    }
   }
 
   async verifyEmail(dto: VerifyEmailDto): Promise<void> {

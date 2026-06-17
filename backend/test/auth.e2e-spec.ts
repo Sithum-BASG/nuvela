@@ -205,6 +205,35 @@ describe('Auth endpoints (e2e)', () => {
     expect(mailServiceMock.sendPasswordResetEmail).not.toHaveBeenCalled();
   }, 30000);
 
+  it('rolls back the new org and owner when the verification email fails', async () => {
+    const failSuffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const failEmail = `rollback-${failSuffix}@example.com`;
+    const failOrgName = `Rollback Org ${failSuffix}`;
+
+    mailServiceMock.sendVerificationEmail.mockRejectedValueOnce(
+      new Error('Resend unavailable'),
+    );
+
+    await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        name: 'Rollback Owner',
+        email: failEmail,
+        password,
+        orgName: failOrgName,
+      })
+      .expect(500);
+
+    // The compensating rollback must leave no orphaned org or owner behind, so
+    // the email can be retried with the same address later.
+    const org = await prisma.organization.findFirst({
+      where: { name: failOrgName },
+    });
+    expect(org).toBeNull();
+    const user = await prisma.user.findFirst({ where: { email: failEmail } });
+    expect(user).toBeNull();
+  }, 30000);
+
   describe('MustResetPassword guard flow', () => {
     jest.setTimeout(30000);
 

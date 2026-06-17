@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
@@ -6,6 +10,8 @@ const FROM_EMAIL = 'onboarding@resend.dev';
 
 @Injectable()
 export class MailService {
+  private readonly logger = new Logger(MailService.name);
+
   constructor(private readonly configService: ConfigService) {}
 
   async sendVerificationEmail(to: string, link: string): Promise<void> {
@@ -61,6 +67,13 @@ export class MailService {
     });
 
     if (!response.ok) {
+      // Capture Resend's reason in the server log (the client-facing message
+      // stays generic). Without this the actual cause — e.g. an unverified
+      // sending domain or a test-mode recipient restriction — is invisible.
+      const detail = await response.text().catch(() => '');
+      this.logger.error(
+        `Resend send failed (${response.status} ${response.statusText}) to "${to}": ${detail}`,
+      );
       throw new InternalServerErrorException({
         code: 'EMAIL_SEND_FAILED',
         message: 'Could not send email.',

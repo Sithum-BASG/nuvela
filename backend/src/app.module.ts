@@ -10,7 +10,10 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { MustResetGuard } from './common/guards/must-reset.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { HealthModule } from './health/health.module';
+import { OrganizationsModule } from './organizations/organizations.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProjectsModule } from './projects/projects.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -19,6 +22,9 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
     HealthModule,
     AuthModule,
+    UsersModule,
+    OrganizationsModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [

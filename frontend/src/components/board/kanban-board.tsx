@@ -22,6 +22,7 @@ import type { ColumnRow, TaskRow } from "@/lib/tasks-api.types";
 import { BoardColumn } from "./board-column";
 import { TaskCard } from "./task-card";
 import { ApiError } from "@/lib/api-client";
+import { TaskDetailPanel } from "./task-detail-panel";
 
 type Props = {
   projectId: string;
@@ -36,6 +37,8 @@ export function KanbanBoard({ projectId, projectManagerId }: Props) {
 
   // active drag state
   const [activeTask, setActiveTask] = useState<TaskRow | null>(null);
+  // detail panel
+  const [selectedTask, setSelectedTask] = useState<TaskRow | null>(null);
 
   // optimistic tasks layer
   const [optimisticTasks, setOptimisticTask] = useOptimistic(
@@ -164,6 +167,7 @@ export function KanbanBoard({ projectId, projectManagerId }: Props) {
   if (loading) return <BoardSkeleton />;
 
   return (
+    <>
     <DndContext
       sensors={sensors}
       collisionDetection={closestCorners}
@@ -180,6 +184,7 @@ export function KanbanBoard({ projectId, projectManagerId }: Props) {
             isPm={isPm}
             isCollaborator={me?.role === "COLLABORATOR"}
             projectId={projectId}
+            onTaskClick={(task) => setSelectedTask(task)}
             onTaskCreated={(task) => setTasks((prev) => [...prev, task])}
             onTaskUpdated={(task) =>
               setTasks((prev) => prev.map((t) => (t.id === task.id ? task : t)))
@@ -197,6 +202,21 @@ export function KanbanBoard({ projectId, projectManagerId }: Props) {
         ) : null}
       </DragOverlay>
     </DndContext>
+
+    <TaskDetailPanel
+      task={selectedTask}
+      isPm={isPm}
+      onClose={() => setSelectedTask(null)}
+      onUpdated={(task) => {
+        setTasks((prev) => prev.map((t) => (t.id === task.id ? task : t)));
+        setSelectedTask(task);
+      }}
+      onDeleted={(taskId) => {
+        setTasks((prev) => prev.filter((t) => t.id !== taskId));
+        setSelectedTask(null);
+      }}
+    />
+    </>
   );
 }
 

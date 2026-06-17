@@ -15,6 +15,7 @@ type Props = {
   task: TaskRow;
   isDragging?: boolean;
   isPm?: boolean;
+  onClick?: () => void;
   onUpdated?: (task: TaskRow) => void;
   onDeleted?: (taskId: string) => void;
 };
@@ -31,6 +32,7 @@ export function TaskCard({
   task,
   isDragging = false,
   isPm = false,
+  onClick,
   onDeleted,
 }: Props) {
   const [deleting, setDeleting] = useState(false);
@@ -72,6 +74,7 @@ export function TaskCard({
       style={style}
       {...attributes}
       {...listeners}
+      onClick={onClick}
       className={cn(
         "group relative flex cursor-grab flex-col gap-2 rounded-[8px] border border-border bg-card p-3 shadow-sm",
         "transition-[opacity,shadow] duration-150",

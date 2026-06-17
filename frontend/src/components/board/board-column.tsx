@@ -18,6 +18,7 @@ type Props = {
   isPm: boolean;
   isCollaborator: boolean;
   projectId: string;
+  onTaskClick: (task: TaskRow) => void;
   onTaskCreated: (task: TaskRow) => void;
   onTaskUpdated: (task: TaskRow) => void;
   onTaskDeleted: (taskId: string) => void;
@@ -29,6 +30,7 @@ export function BoardColumn({
   isPm,
   isCollaborator,
   projectId,
+  onTaskClick,
   onTaskCreated,
   onTaskUpdated,
   onTaskDeleted,
@@ -89,6 +91,7 @@ export function BoardColumn({
               key={task.id}
               task={task}
               isPm={isPm}
+              onClick={() => onTaskClick(task)}
               onUpdated={onTaskUpdated}
               onDeleted={onTaskDeleted}
             />

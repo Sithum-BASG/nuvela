@@ -280,5 +280,8 @@ function inviteExpiry(): Date {
 }
 
 function loginUrl(): string {
-  return process.env.FRONTEND_URL || 'http://localhost:3000/login';
+  // FRONTEND_URL is the base origin everywhere in the app (auth.service, main.ts);
+  // append the login path here so the temp-password email links to the sign-in page.
+  const base = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+  return `${base}/login`;
 }

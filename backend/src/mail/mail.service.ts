@@ -6,7 +6,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
-const FROM_EMAIL = 'onboarding@resend.dev';
+// Fallback sender used only when MAIL_FROM is unset. `onboarding@resend.dev` is
+// Resend's shared test sender (delivers only to the account owner); set MAIL_FROM
+// to an address on a verified domain (e.g. noreply@nuvela.space) to reach anyone.
+const DEFAULT_FROM_EMAIL = 'onboarding@resend.dev';
 
 @Injectable()
 export class MailService {
@@ -52,6 +55,8 @@ export class MailService {
     html: string,
   ): Promise<void> {
     const apiKey = this.configService.getOrThrow<string>('RESEND_API_KEY');
+    const from =
+      this.configService.get<string>('MAIL_FROM') ?? DEFAULT_FROM_EMAIL;
     const response = await fetch(RESEND_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -59,7 +64,7 @@ export class MailService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: FROM_EMAIL,
+        from,
         to: [to],
         subject,
         html,

@@ -17,6 +17,7 @@ import { tasksApi } from "@/lib/tasks-api";
 import type { TaskRow, ChecklistItemRow } from "@/lib/tasks-api.types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { LabelManager } from "./label-manager";
 
 type Props = {
   task: TaskRow | null;
@@ -303,22 +304,16 @@ export function TaskDetailPanel({
               )}
 
               {/* Labels */}
-              {task.labels.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  <SectionLabel>Labels</SectionLabel>
-                  <div className="flex flex-wrap gap-1.5">
-                    {task.labels.map((label) => (
-                      <span
-                        key={label.id}
-                        className="inline-flex h-[22px] items-center rounded-[5px] px-2 text-[12px] font-medium text-white"
-                        style={{ backgroundColor: label.color }}
-                      >
-                        {label.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="flex flex-col gap-2">
+                <SectionLabel>Labels</SectionLabel>
+                <LabelManager
+                  projectId={task.projectId}
+                  taskId={task.id}
+                  appliedLabels={task.labels}
+                  isPm={isPm}
+                  onLabelsChanged={(labels) => onUpdated({ ...task, labels })}
+                />
+              </div>
 
               {/* Checklist */}
               <div className="flex flex-col gap-2">

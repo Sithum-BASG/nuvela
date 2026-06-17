@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { PageHeader } from "@/components/app/page-header";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -47,14 +49,14 @@ function ManagerialEmptyState({ role }: { role: string }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {cards.map((c) => (
-        <a
+        <Link
           key={c.href}
           href={c.href}
           className="group flex flex-col gap-1.5 rounded-card border border-border bg-card p-5 outline-none transition-colors hover:border-primary/40 focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <span className="font-display text-base font-semibold text-foreground">{c.label}</span>
           <span className="text-[13px] leading-5 text-text-secondary">{c.body}</span>
-        </a>
+        </Link>
       ))}
     </div>
   );
@@ -67,12 +69,12 @@ function MemberEmptyState() {
       <p className="max-w-sm text-sm text-text-secondary">
         When you&apos;re added to a project, it&apos;ll show up here and in the Projects tab.
       </p>
-      <a
+      <Link
         href="/projects"
         className="mt-1 text-sm font-medium text-accent-strong hover:underline"
       >
         Go to projects
-      </a>
+      </Link>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,13 +44,16 @@ export function EditUserModal({ user, onClose, onUpdated }: Props) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; role?: string }>({});
 
-  useEffect(() => {
-    if (user) {
-      setName(user.name);
-      setRole(user.role);
-      setErrors({});
-    }
-  }, [user]);
+  // Sync the form to the selected user by adjusting state during render when the
+  // target changes — React's documented alternative to a prop-sync effect
+  // (https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes).
+  const [syncedId, setSyncedId] = useState<string | null>(null);
+  if (user && user.id !== syncedId) {
+    setSyncedId(user.id);
+    setName(user.name);
+    setRole(user.role);
+    setErrors({});
+  }
 
   function validate() {
     const e: typeof errors = {};

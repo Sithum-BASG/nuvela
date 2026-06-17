@@ -61,7 +61,6 @@ export default function UsersPage() {
   const canManage = me?.role === "OWNER" || me?.role === "ADMIN";
 
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       const data = await listUsers();
       setUsers(data);
@@ -73,7 +72,9 @@ export default function UsersPage() {
   }, []);
 
   useEffect(() => {
-    void load();
+    void (async () => {
+      await load();
+    })();
   }, [load]);
 
   // --- filter logic ---

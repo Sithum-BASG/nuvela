@@ -92,7 +92,7 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
                 Create user
               </DialogTitle>
               <DialogDescription className="text-[13px] leading-5 text-text-secondary">
-                They'll receive an email invite with a temporary password.
+                They&apos;ll receive an email invite with a temporary password.
               </DialogDescription>
             </div>
             <button

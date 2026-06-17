@@ -21,6 +21,7 @@ import { useAuth } from "@/providers/auth-provider";
 import type { ColumnRow, TaskRow } from "@/lib/tasks-api.types";
 import { BoardColumn } from "./board-column";
 import { TaskCard } from "./task-card";
+import { ApiError } from "@/lib/api-client";
 
 type Props = {
   projectId: string;
@@ -143,9 +144,19 @@ export function KanbanBoard({ projectId, projectManagerId }: Props) {
       // Refresh from server to get canonical positions
       const fresh = await tasksApi.tasks.list(projectId);
       setTasks(fresh);
-    } catch {
-      // Rollback
+    } catch (err) {
+      // Rollback optimistic move
       setTasks(tasks);
+      if (err instanceof ApiError) {
+        if (err.code === "PM_GATED") {
+          toast.error("Only a Project Manager can move tasks into this column.");
+          return;
+        }
+        if (err.code === "NOT_ASSIGNEE") {
+          toast.error("You can only move tasks you are assigned to.");
+          return;
+        }
+      }
       toast.error("Failed to move task.");
     }
   }
@@ -167,6 +178,7 @@ export function KanbanBoard({ projectId, projectManagerId }: Props) {
             column={col}
             tasks={optimisticTasks.filter((t) => t.columnId === col.id)}
             isPm={isPm}
+            isCollaborator={me?.role === "COLLABORATOR"}
             projectId={projectId}
             onTaskCreated={(task) => setTasks((prev) => [...prev, task])}
             onTaskUpdated={(task) =>

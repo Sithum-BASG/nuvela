@@ -6,7 +6,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
-import { Plus } from "lucide-react";
+import { Plus, Lock } from "lucide-react";
 
 import type { ColumnRow, TaskRow } from "@/lib/tasks-api.types";
 import { TaskCard } from "./task-card";
@@ -16,6 +16,7 @@ type Props = {
   column: ColumnRow;
   tasks: TaskRow[];
   isPm: boolean;
+  isCollaborator: boolean;
   projectId: string;
   onTaskCreated: (task: TaskRow) => void;
   onTaskUpdated: (task: TaskRow) => void;
@@ -26,6 +27,7 @@ export function BoardColumn({
   column,
   tasks,
   isPm,
+  isCollaborator,
   projectId,
   onTaskCreated,
   onTaskUpdated,
@@ -54,6 +56,16 @@ export function BoardColumn({
           <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-border px-1 text-[11px] font-medium text-text-secondary">
             {tasks.length}
           </span>
+          {/* Lock badge — visible to Collaborators on PM-gated columns */}
+          {isCollaborator && column.isPmGated && (
+            <span
+              className="flex items-center gap-0.5 rounded-[4px] bg-warning-tint px-1.5 py-[2px] text-[10px] font-medium text-warning"
+              title="Only a Project Manager can move tasks into this column"
+            >
+              <Lock className="size-[9px]" strokeWidth={2.5} />
+              PM only
+            </span>
+          )}
         </div>
         {isPm && (
           <button

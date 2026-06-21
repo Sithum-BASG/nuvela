@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 import type { INestApplication } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -142,7 +143,6 @@ function createCollaborationStore(): CollaborationStore {
 function createInMemoryPrisma(storeRef: { store: CollaborationStore }) {
   let commentSeq = 0;
   let mentionSeq = 0;
-  const attachmentSeq = 0;
   let activitySeq = 0;
 
   const prisma = {

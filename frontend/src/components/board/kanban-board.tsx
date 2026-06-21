@@ -206,6 +206,7 @@ export function KanbanBoard({ projectId, projectManagerId }: Props) {
     <TaskDetailPanel
       task={selectedTask}
       isPm={isPm}
+      me={me ? { id: me.id, name: me.name } : null}
       onClose={() => setSelectedTask(null)}
       onUpdated={(task) => {
         setTasks((prev) => prev.map((t) => (t.id === task.id ? task : t)));

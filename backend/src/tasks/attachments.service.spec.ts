@@ -105,7 +105,10 @@ describe('AttachmentsService', () => {
       remove: jest.fn().mockResolvedValue(undefined),
     };
 
-    tasksService = new TasksService(prisma as unknown as PrismaService);
+    tasksService = new TasksService(
+      prisma as unknown as PrismaService,
+      { notify: jest.fn(), notifyMany: jest.fn() } as never,
+    );
     service = new AttachmentsService(
       prisma as unknown as PrismaService,
       tasksService,

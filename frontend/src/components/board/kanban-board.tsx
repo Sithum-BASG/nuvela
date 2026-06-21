@@ -27,9 +27,10 @@ import { TaskDetailPanel } from "./task-detail-panel";
 type Props = {
   projectId: string;
   projectManagerId: string;
+  initialTaskId?: string | null;
 };
 
-export function KanbanBoard({ projectId, projectManagerId }: Props) {
+export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Props) {
   const { user: me } = useAuth();
   const [columns, setColumns] = useState<ColumnRow[]>([]);
   const [tasks, setTasks] = useState<TaskRow[]>([]);
@@ -72,6 +73,15 @@ export function KanbanBoard({ projectId, projectManagerId }: Props) {
     load().catch(() => {/* handled inside load */});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
+
+  useEffect(() => {
+    if (!initialTaskId || tasks.length === 0) return;
+    const match = tasks.find((t) => t.id === initialTaskId);
+    if (match) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- open deep-linked task once board data loads
+      setSelectedTask(match);
+    }
+  }, [initialTaskId, tasks]);
 
   // ─── DnD sensors ──────────────────────────────────────────────────────────
   const sensors = useSensors(

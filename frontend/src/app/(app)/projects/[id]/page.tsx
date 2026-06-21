@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,6 +11,8 @@ import { PageHeader } from "@/components/app/page-header";
 
 export default function ProjectBoardPage() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const initialTaskId = searchParams.get("task");
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -64,6 +66,7 @@ export default function ProjectBoardPage() {
         <KanbanBoard
           projectId={project.id}
           projectManagerId={project.managerId}
+          initialTaskId={initialTaskId}
         />
       </div>
     </div>

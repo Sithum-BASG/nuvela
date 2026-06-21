@@ -4,9 +4,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ProjectStatus, Role, UserStatus } from '@prisma/client';
+import {
+  NotificationType,
+  ProjectStatus,
+  Role,
+  UserStatus,
+} from '@prisma/client';
 import { generateTempPassword, hashPassword } from '../auth/password.util';
 import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { DeactivateUserDto } from './dto/deactivate-user.dto';
@@ -35,6 +41,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async listUsers(
@@ -147,6 +154,7 @@ export class UsersService {
     orgId: string,
     userId: string,
     dto: DeactivateUserDto = {},
+    actorId?: string,
   ): Promise<{ done: boolean; projects?: { id: string; name: string }[] }> {
     const user = await this.findUserInOrg(orgId, userId);
 
@@ -223,6 +231,18 @@ export class UsersService {
             });
           }
         });
+
+        for (const project of ownedProjects) {
+          const newManagerId = transferByProject.get(project.id)!;
+          if (newManagerId !== actorId) {
+            await this.notificationsService.notify({
+              organizationId: orgId,
+              recipientId: newManagerId,
+              type: NotificationType.PROJECT_TRANSFERRED,
+              payload: { projectId: project.id, name: project.name },
+            });
+          }
+        }
       }
     }
 

@@ -4,9 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ProjectStatus, Role } from '@prisma/client';
+import { ProjectStatus, Role, NotificationType } from '@prisma/client';
 import { ColumnsService } from '../columns/columns.service';
 import type { CurrentUserPayload } from '../common/decorators/current-user.decorator';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { TransferProjectDto } from './dto/transfer-project.dto';
@@ -58,6 +59,7 @@ export class ProjectsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly columnsService: ColumnsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async listProjects(caller: CurrentUserPayload): Promise<ProjectRow[]> {
@@ -210,7 +212,8 @@ export class ProjectsService {
     projectId: string,
     dto: TransferProjectDto,
   ): Promise<ProjectRow> {
-    await this.findManagedProject(caller, projectId);
+    const project = await this.findManagedProject(caller, projectId);
+    const previousManagerId = project.managerId;
 
     // The new manager must be a PM or Owner in the same organization.
     const newManager = await this.prisma.user.findFirst({
@@ -243,7 +246,17 @@ export class ProjectsService {
         select: PROJECT_SELECT,
       });
     });
-    return toProjectRow(updated);
+    const row = toProjectRow(updated);
+
+    await this.notificationsService.notifyMany(
+      caller.organizationId,
+      [dto.newManagerId, previousManagerId],
+      NotificationType.PROJECT_TRANSFERRED,
+      { projectId, name: row.name },
+      caller.userId,
+    );
+
+    return row;
   }
 
   // Project read access: Owner (any in org), owning PM, or a member. Else 404

@@ -34,7 +34,10 @@ describe('ActivityService', () => {
       activityLog: { findMany: jest.fn() },
     };
 
-    const tasksService = new TasksService(prisma as unknown as PrismaService);
+    const tasksService = new TasksService(
+      prisma as unknown as PrismaService,
+      { notify: jest.fn(), notifyMany: jest.fn() } as never,
+    );
     service = new ActivityService(
       prisma as unknown as PrismaService,
       tasksService,

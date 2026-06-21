@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Role, UserStatus } from '@prisma/client';
 import { MailService } from '../mail/mail.service';
+import type { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from './users.service';
 
@@ -71,9 +72,14 @@ describe('UsersService', () => {
     mailService = {
       sendTempPasswordEmail: jest.fn().mockResolvedValue(undefined),
     };
+    const notificationsService = {
+      notify: jest.fn().mockResolvedValue(undefined),
+      notifyMany: jest.fn().mockResolvedValue(undefined),
+    };
     service = new UsersService(
       prisma as unknown as PrismaService,
       mailService as unknown as MailService,
+      notificationsService as unknown as NotificationsService,
     );
   });
 

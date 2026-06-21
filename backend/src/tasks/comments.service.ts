@@ -4,8 +4,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ActivityType, ProjectStatus, Role } from '@prisma/client';
+import {
+  ActivityType,
+  NotificationType,
+  ProjectStatus,
+  Role,
+} from '@prisma/client';
 import type { CurrentUserPayload } from '../common/decorators/current-user.decorator';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { TasksService } from './tasks.service';
@@ -24,6 +30,7 @@ export class CommentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tasksService: TasksService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async listComments(
@@ -130,6 +137,20 @@ export class CommentsService {
 
       return created;
     });
+
+    if (mentionedUserIds.length > 0) {
+      await this.notificationsService.notifyMany(
+        caller.organizationId,
+        mentionedUserIds,
+        NotificationType.MENTION,
+        {
+          taskId,
+          projectId: task.projectId,
+          commentId: comment.id,
+        },
+        caller.userId,
+      );
+    }
 
     const mentions =
       mentionedUserIds.length > 0

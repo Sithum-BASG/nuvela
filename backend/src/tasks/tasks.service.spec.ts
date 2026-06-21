@@ -1,6 +1,13 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { ActivityType, Priority, ProjectStatus, Role } from '@prisma/client';
+import {
+  ActivityType,
+  NotificationType,
+  Priority,
+  ProjectStatus,
+  Role,
+} from '@prisma/client';
 import type { CurrentUserPayload } from '../common/decorators/current-user.decorator';
+import type { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TasksService } from './tasks.service';
 
@@ -141,6 +148,7 @@ function completedColumn(overrides: Record<string, unknown> = {}) {
 describe('TasksService', () => {
   let prisma: MockPrisma;
   let service: TasksService;
+  let notificationsService: { notify: jest.Mock; notifyMany: jest.Mock };
 
   beforeEach(() => {
     prisma = {
@@ -180,7 +188,15 @@ describe('TasksService', () => {
       cb(prisma),
     );
 
-    service = new TasksService(prisma as unknown as PrismaService);
+    notificationsService = {
+      notify: jest.fn().mockResolvedValue(undefined),
+      notifyMany: jest.fn().mockResolvedValue(undefined),
+    };
+
+    service = new TasksService(
+      prisma as unknown as PrismaService,
+      notificationsService as unknown as NotificationsService,
+    );
   });
 
   // ─── listTasks / getTask ────────────────────────────────────────────────────
@@ -487,6 +503,12 @@ describe('TasksService', () => {
       prisma.activityLog.create.mockResolvedValue({});
 
       await service.addAssignee(pm, 'task-1', { userId: 'collab-1' });
+      expect(notificationsService.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientId: 'collab-1',
+          type: NotificationType.TASK_ASSIGNED,
+        }),
+      );
       expect(prisma.activityLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

@@ -107,7 +107,12 @@ export class UsersController {
     @Param('id') userId: string,
     @Body() dto: DeactivateUserDto,
   ): Promise<{ done: boolean; projects?: { id: string; name: string }[] }> {
-    return this.usersService.deactivateUser(user.organizationId, userId, dto);
+    return this.usersService.deactivateUser(
+      user.organizationId,
+      userId,
+      dto,
+      user.userId,
+    );
   }
 
   @Post(':id/resend-invite')

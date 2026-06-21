@@ -90,10 +90,11 @@ async function request<T>(
     throwAuthError(res, data);
   }
 
-  if (res.status === 204) {
+  const text = await res.text();
+  if (!text) {
     return undefined as T;
   }
-  return res.json() as Promise<T>;
+  return JSON.parse(text) as T;
 }
 
 export const authApi = {

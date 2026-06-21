@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LabelManager } from "./label-manager";
 import { CommentThread } from "./comment-thread";
+import { AttachmentSection } from "./attachment-section";
 
 type Props = {
   task: TaskRow | null;
@@ -428,6 +429,15 @@ export function TaskDetailPanel({
                   taskId={task.id}
                   projectId={task.projectId}
                   me={me}
+                  canModerate={isPm}
+                />
+              )}
+
+              {/* Attachments */}
+              {me && (
+                <AttachmentSection
+                  taskId={task.id}
+                  meId={me.id}
                   canModerate={isPm}
                 />
               )}

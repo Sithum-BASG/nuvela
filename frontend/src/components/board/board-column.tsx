@@ -47,7 +47,7 @@ export function BoardColumn({
   return (
     <div
       className={[
-        "flex w-[272px] shrink-0 flex-col gap-2 rounded-[12px] border bg-card p-3 transition-colors duration-150",
+        "flex w-[272px] shrink-0 flex-col gap-2 rounded-[12px] border bg-card p-3 transition-colors duration-150 motion-reduce:transition-none",
         isOver ? "border-primary/40 bg-accent-tint/30" : "border-border",
       ].join(" ")}
     >

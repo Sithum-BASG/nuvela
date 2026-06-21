@@ -78,7 +78,7 @@ export function TaskCard({
       onClick={onClick}
       className={cn(
         "group relative flex cursor-grab flex-col gap-2 rounded-[8px] border border-border bg-card p-3 shadow-sm",
-        "transition-[opacity,shadow] duration-150",
+        "transition-[opacity,shadow] duration-150 motion-reduce:transition-none",
         "hover:shadow-md hover:border-border/70 active:cursor-grabbing",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         isGhost && "opacity-40",

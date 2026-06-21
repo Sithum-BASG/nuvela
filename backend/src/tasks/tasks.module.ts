@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { StorageModule } from '../storage/storage.module';
+import { ActivityController } from './activity.controller';
+import { ActivityService } from './activity.service';
 import { AttachmentsController } from './attachments.controller';
 import { AttachmentsService } from './attachments.service';
 import { ChecklistController } from './checklist.controller';
@@ -20,6 +22,7 @@ import { TasksService } from './tasks.service';
     ChecklistController,
     CommentsController,
     AttachmentsController,
+    ActivityController,
   ],
   providers: [
     TasksService,
@@ -27,6 +30,7 @@ import { TasksService } from './tasks.service';
     ChecklistService,
     CommentsService,
     AttachmentsService,
+    ActivityService,
   ],
   exports: [TasksService],
 })

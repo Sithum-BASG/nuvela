@@ -160,7 +160,7 @@ export default function UsersPage() {
   const isSlow = useSlowFetch(loading);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-4 sm:gap-5 sm:p-8">
       <PageHeader
         title="Users"
         subtitle="Manage who has access to your organization"
@@ -172,9 +172,9 @@ export default function UsersPage() {
       />
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         {/* Search */}
-        <div className="relative w-[360px]">
+        <div className="relative w-full lg:w-[360px]">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-muted"
             aria-hidden
@@ -189,7 +189,7 @@ export default function UsersPage() {
         </div>
 
         {/* Status filter chips */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-[13px] font-medium text-text-muted">Filter</span>
           {STATUS_FILTERS.map((f) => {
             const active = activeFilters.has(f.value);
@@ -229,7 +229,7 @@ export default function UsersPage() {
       {/* Table */}
       <div className="overflow-hidden rounded-[12px] border border-border bg-card">
         {/* Header row */}
-        <div className="flex h-[38px] items-center border-b border-border bg-[#fbfbfc] px-5">
+        <div className="hidden h-[38px] items-center border-b border-border bg-[#fbfbfc] px-5 md:flex">
           <div className="flex flex-1 items-center">
             <span className="text-[12px] font-medium tracking-[0.48px] text-text-muted uppercase">
               User
@@ -290,7 +290,10 @@ export default function UsersPage() {
             return (
               <div
                 key={u.id}
-                className="flex h-[64px] items-center border-b border-border bg-white px-5 py-[14px] last:border-b-0"
+                className={cn(
+                  "flex flex-col gap-3 border-b border-border bg-card p-4 last:border-b-0",
+                  "md:h-[64px] md:flex-row md:items-center md:px-5 md:py-[14px]",
+                )}
               >
                 {/* User cell */}
                 <div className="flex flex-1 items-center gap-3">
@@ -312,8 +315,9 @@ export default function UsersPage() {
                   </div>
                 </div>
 
-                {/* Role cell */}
-                <div className="w-[140px]">
+                <div className="flex items-center justify-between gap-3 md:contents">
+                  {/* Role cell */}
+                  <div className="md:w-[140px]">
                   <span
                     className={cn(
                       "text-[14px]",
@@ -322,15 +326,15 @@ export default function UsersPage() {
                   >
                     {ROLE_LABEL[u.role] ?? u.role}
                   </span>
-                </div>
+                  </div>
 
-                {/* Status cell */}
-                <div className="w-[130px]">
+                  {/* Status cell */}
+                  <div className="md:w-[130px]">
                   <StatusBadge status={u.status} />
-                </div>
+                  </div>
 
-                {/* Actions cell */}
-                <div className="flex w-[90px] items-center justify-end gap-[10px]">
+                  {/* Actions cell */}
+                  <div className="flex min-h-11 items-center justify-end gap-[10px] md:w-[90px]">
                   {isPending && canManage && (
                     <button
                       type="button"
@@ -343,7 +347,7 @@ export default function UsersPage() {
                   {canManage && !isSelf && u.role !== "OWNER" && (
                     <DropdownMenu>
                       <DropdownMenuTrigger
-                        className="flex size-7 items-center justify-center rounded-[6px] text-text-muted outline-none transition-colors hover:bg-[#f0f1f3] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+                        className="flex size-11 items-center justify-center rounded-[6px] text-text-muted outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 md:size-7"
                         aria-label={`Actions for ${u.name}`}
                       >
                         <MoreHorizontal className="size-[18px]" strokeWidth={1.75} />
@@ -368,6 +372,7 @@ export default function UsersPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
+                  </div>
                 </div>
               </div>
             );

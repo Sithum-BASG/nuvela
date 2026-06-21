@@ -203,7 +203,8 @@ export function TaskDetailPanel({
         aria-label="Task details"
         className={cn(
           "fixed inset-y-0 right-0 z-50 flex w-full max-w-[420px] flex-col bg-card shadow-2xl",
-          "transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
+          "max-md:inset-0 max-md:max-w-none",
+          "transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
           open ? "translate-x-0" : "translate-x-full",
         )}
       >

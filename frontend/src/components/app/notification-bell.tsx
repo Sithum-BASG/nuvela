@@ -33,7 +33,7 @@ export function NotificationBell() {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "relative inline-flex size-9 items-center justify-center rounded-control text-foreground outline-none",
+          "relative inline-flex size-11 items-center justify-center rounded-control text-foreground outline-none",
           "hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/50",
         )}
         aria-label="Notifications"

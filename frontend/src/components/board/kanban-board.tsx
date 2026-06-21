@@ -196,7 +196,7 @@ export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Prop
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
     >
-      <div className="flex h-full gap-3 overflow-x-auto px-6 pb-4 pt-2">
+      <div className="flex h-full gap-3 overflow-x-auto px-4 pb-4 pt-2 sm:px-6">
         {columns.map((col) => (
           <BoardColumn
             key={col.id}

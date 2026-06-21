@@ -234,6 +234,66 @@ describe('Auth endpoints (e2e)', () => {
     expect(user).toBeNull();
   }, 30000);
 
+  it('logs in with the verified account when the same email has a pending duplicate', async () => {
+    const dupSuffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const dupEmail = `dup-login-${dupSuffix}@example.com`;
+    const dupPassword = 'Str0ngPass!';
+    const firstOrgName = `Dup Org A ${dupSuffix}`;
+    const secondOrgName = `Dup Org B ${dupSuffix}`;
+
+    await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        name: 'Dup Owner',
+        email: dupEmail,
+        password: dupPassword,
+        orgName: firstOrgName,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        name: 'Dup Owner',
+        email: dupEmail,
+        password: dupPassword,
+        orgName: secondOrgName,
+      })
+      .expect(201);
+
+    const pendingOwner = await prisma.user.findFirstOrThrow({
+      where: { email: dupEmail, organization: { name: firstOrgName } },
+    });
+    const verifiedOwner = await prisma.user.findFirstOrThrow({
+      where: { email: dupEmail, organization: { name: secondOrgName } },
+    });
+    createdUserIds.push(pendingOwner.id, verifiedOwner.id);
+    createdOrganizationIds.push(
+      pendingOwner.organizationId,
+      verifiedOwner.organizationId,
+    );
+
+    const secondVerificationLink =
+      mailServiceMock.sendVerificationEmail.mock.calls.at(-1)?.[1];
+    const secondToken = new URL(secondVerificationLink!).searchParams.get(
+      'token',
+    );
+
+    await request(app.getHttpServer())
+      .post('/auth/verify-email')
+      .send({ token: secondToken })
+      .expect(200);
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: dupEmail, password: dupPassword })
+      .expect(200);
+
+    expect(responseBody<{ user: { id: string } }>(loginResponse).user.id).toBe(
+      verifiedOwner.id,
+    );
+  }, 30000);
+
   describe('MustResetPassword guard flow', () => {
     jest.setTimeout(30000);
 

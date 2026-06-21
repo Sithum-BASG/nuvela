@@ -53,7 +53,7 @@ export default function ProjectBoardPage() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="px-6 pt-6 pb-3">
+      <div className="px-4 pt-6 pb-3 sm:px-6">
         <PageHeader
           title={project.name}
           subtitle={project.description ?? undefined}

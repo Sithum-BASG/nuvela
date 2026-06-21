@@ -46,7 +46,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
         {onMenuClick && (
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-lg"
             className="lg:hidden"
             onClick={onMenuClick}
             aria-label="Open navigation"

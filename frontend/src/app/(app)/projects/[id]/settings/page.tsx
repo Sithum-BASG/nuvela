@@ -536,7 +536,7 @@ export default function ProjectSettingsPage({
                 {invitable.map((user) => (
                   <div
                     key={user.id}
-                    className="flex h-[60px] items-center gap-3 rounded-[10px] border border-border bg-background pl-[14px] pr-3"
+                    className="flex min-h-[60px] flex-col gap-3 rounded-[10px] border border-border bg-background p-[14px] sm:flex-row sm:items-center sm:pl-[14px] sm:pr-[10px]"
                   >
                     <span
                       className={cn(

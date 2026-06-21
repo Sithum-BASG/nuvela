@@ -9,9 +9,15 @@ type Props = {
   taskId: string;
   meId: string;
   canModerate: boolean;
+  showTitle?: boolean;
 };
 
-export function AttachmentSection({ taskId, meId, canModerate }: Props) {
+export function AttachmentSection({
+  taskId,
+  meId,
+  canModerate,
+  showTitle = true,
+}: Props) {
   const [version, setVersion] = useState(0);
 
   function handleUploaded() {
@@ -19,10 +25,12 @@ export function AttachmentSection({ taskId, meId, canModerate }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-        Attachments
-      </span>
+    <div className="flex flex-col gap-2.5">
+      {showTitle && (
+        <h3 className="font-display text-base font-semibold text-foreground">
+          Attachments
+        </h3>
+      )}
       <AttachmentList
         key={version}
         taskId={taskId}

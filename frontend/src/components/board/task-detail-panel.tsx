@@ -189,7 +189,7 @@ export function TaskDetailPanel({
       {/* Backdrop */}
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] transition-opacity duration-200",
+          "fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] transition-opacity duration-200 motion-reduce:transition-none",
           open ? "opacity-100" : "pointer-events-none opacity-0",
         )}
         onClick={onClose}

@@ -201,7 +201,7 @@ export default function UsersPage() {
                 className={cn(
                   "flex h-[30px] items-center gap-2 rounded-[8px] border px-[11px] text-[13px] transition-colors",
                   active
-                    ? "border-[#d9d5f5] bg-[#edebfb] font-medium text-accent-strong"
+                    ? "border-accent-tint bg-accent-tint font-medium text-accent-strong"
                     : "border-border bg-card font-normal text-text-secondary hover:border-border/80",
                 )}
               >
@@ -229,7 +229,7 @@ export default function UsersPage() {
       {/* Table */}
       <div className="overflow-hidden rounded-[12px] border border-border bg-card">
         {/* Header row */}
-        <div className="hidden h-[38px] items-center border-b border-border bg-[#fbfbfc] px-5 md:flex">
+        <div className="hidden h-[38px] items-center border-b border-border bg-muted px-5 md:flex">
           <div className="flex flex-1 items-center">
             <span className="text-[12px] font-medium tracking-[0.48px] text-text-muted uppercase">
               User
@@ -347,7 +347,7 @@ export default function UsersPage() {
                   {canManage && !isSelf && u.role !== "OWNER" && (
                     <DropdownMenu>
                       <DropdownMenuTrigger
-                        className="flex size-11 items-center justify-center rounded-[6px] text-text-muted outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 md:size-7"
+                        className="flex size-11 items-center justify-center rounded-[6px] text-text-muted outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none md:size-7"
                         aria-label={`Actions for ${u.name}`}
                       >
                         <MoreHorizontal className="size-[18px]" strokeWidth={1.75} />
@@ -422,7 +422,7 @@ function StatusBadge({ status }: { status: string }) {
     );
   }
   return (
-    <span className="inline-flex h-[22px] items-center rounded-[6px] bg-[#eff0f3] px-2 text-[12px] font-medium leading-4 text-text-muted">
+    <span className="inline-flex h-[22px] items-center rounded-[6px] bg-muted px-2 text-[12px] font-medium leading-4 text-text-muted">
       Deactivated
     </span>
   );

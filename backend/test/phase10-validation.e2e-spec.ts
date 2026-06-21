@@ -4,8 +4,15 @@ import { Test } from '@nestjs/testing';
 import type { TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
+import type { Response as SupertestResponse } from 'supertest';
 import { AppModule } from '../src/app.module';
 import { MailService } from '../src/mail/mail.service';
+
+type ErrorBody = {
+  statusCode: number;
+  code: string;
+  message: string | string[];
+};
 
 describe('Phase 10 validation (e2e)', () => {
   let app: INestApplication;
@@ -54,12 +61,13 @@ describe('Phase 10 validation (e2e)', () => {
       })
       .expect(400);
 
-    expect(response.body).toMatchObject({
+    const body = responseBody<ErrorBody>(response);
+    expect(body).toMatchObject({
       statusCode: 400,
       code: 'HTTP_EXCEPTION',
     });
-    expect(Array.isArray(response.body.message)).toBe(true);
-    expect(response.body.message.length).toBeGreaterThan(0);
+    expect(Array.isArray(body.message)).toBe(true);
+    expect(body.message.length).toBeGreaterThan(0);
   });
 
   it('returns structured errors for invalid login payloads', async () => {
@@ -68,10 +76,15 @@ describe('Phase 10 validation (e2e)', () => {
       .send({ email: 'bad', password: '' })
       .expect(400);
 
-    expect(response.body).toMatchObject({
+    const body = responseBody<ErrorBody>(response);
+    expect(body).toMatchObject({
       statusCode: 400,
       code: 'HTTP_EXCEPTION',
     });
-    expect(Array.isArray(response.body.message)).toBe(true);
+    expect(Array.isArray(body.message)).toBe(true);
   });
 });
+
+function responseBody<T>(response: SupertestResponse): T {
+  return response.body as T;
+}

@@ -2,6 +2,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ProjectStatus, Role } from '@prisma/client';
 import { ColumnsService } from '../columns/columns.service';
 import type { CurrentUserPayload } from '../common/decorators/current-user.decorator';
+import type { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProjectsService } from './projects.service';
 
@@ -91,9 +92,14 @@ describe('ProjectsService', () => {
       $transaction: jest.fn(),
     };
     columns = { seedDefaultColumns: jest.fn().mockResolvedValue(undefined) };
+    const notificationsService = {
+      notify: jest.fn().mockResolvedValue(undefined),
+      notifyMany: jest.fn().mockResolvedValue(undefined),
+    };
     service = new ProjectsService(
       prisma as unknown as PrismaService,
       columns as unknown as ColumnsService,
+      notificationsService as unknown as NotificationsService,
     );
   });
 

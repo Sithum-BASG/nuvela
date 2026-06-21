@@ -4,8 +4,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ActivityType, Priority, ProjectStatus, Role } from '@prisma/client';
+import {
+  ActivityType,
+  NotificationType,
+  Priority,
+  ProjectStatus,
+  Role,
+} from '@prisma/client';
 import type { CurrentUserPayload } from '../common/decorators/current-user.decorator';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AddAssigneeDto } from './dto/add-assignee.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -84,7 +91,10 @@ const TASK_SELECT = {
 
 @Injectable()
 export class TasksService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   // ─── Columns ──────────────────────────────────────────────────────────────
 
@@ -201,6 +211,20 @@ export class TasksService {
       return task;
     });
 
+    if (assigneeIds.length > 0) {
+      await this.notificationsService.notifyMany(
+        caller.organizationId,
+        assigneeIds,
+        NotificationType.TASK_ASSIGNED,
+        {
+          taskId: created.id,
+          projectId,
+          title: created.title,
+        },
+        caller.userId,
+      );
+    }
+
     return toTaskRow(created);
   }
 
@@ -297,6 +321,7 @@ export class TasksService {
         projectId: true,
         columnId: true,
         position: true,
+        title: true,
         project: {
           select: { status: true, managerId: true, organizationId: true },
         },
@@ -413,6 +438,25 @@ export class TasksService {
       });
     });
 
+    if (columnChanged) {
+      const recipientIds = [
+        ...task.assignees.map((a) => a.userId),
+        task.project.managerId,
+      ];
+      await this.notificationsService.notifyMany(
+        task.project.organizationId,
+        recipientIds,
+        NotificationType.STATUS_CHANGED,
+        {
+          taskId: task.id,
+          projectId: task.projectId,
+          title: task.title,
+          toColumnId: dto.columnId,
+        },
+        caller.userId,
+      );
+    }
+
     return toTaskRow(updated);
   }
 
@@ -445,6 +489,19 @@ export class TasksService {
           },
         });
       });
+
+      if (dto.userId !== caller.userId) {
+        await this.notificationsService.notify({
+          organizationId: caller.organizationId,
+          recipientId: dto.userId,
+          type: NotificationType.TASK_ASSIGNED,
+          payload: {
+            taskId,
+            projectId: task.projectId,
+            title: task.title,
+          },
+        });
+      }
     }
 
     return this.getTask(caller, taskId);

@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import type { CurrentUserPayload } from '../common/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsGateway } from './notifications.gateway';
 import { NotificationsService } from './notifications.service';
 
 describe('NotificationsService', () => {
@@ -16,12 +17,15 @@ describe('NotificationsService', () => {
       notification: {
         findMany: jest.fn(),
         updateMany: jest.fn(),
+        create: jest.fn(),
       },
     };
+    const gateway = { emitToUser: jest.fn() };
     const service = new NotificationsService(
       prisma as unknown as PrismaService,
+      gateway as unknown as NotificationsGateway,
     );
-    return { service, prisma };
+    return { service, prisma, gateway };
   };
 
   it('listOwn filters by recipient, org, and unread', async () => {

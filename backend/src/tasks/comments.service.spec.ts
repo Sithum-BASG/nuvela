@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ActivityType, ProjectStatus, Role } from '@prisma/client';
 import type { CurrentUserPayload } from '../common/decorators/current-user.decorator';
+import type { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommentsService } from './comments.service';
 import { TasksService } from './tasks.service';
@@ -104,10 +105,19 @@ describe('CommentsService', () => {
       cb(prisma),
     );
 
-    tasksService = new TasksService(prisma as unknown as PrismaService);
+    const notificationsService = {
+      notify: jest.fn().mockResolvedValue(undefined),
+      notifyMany: jest.fn().mockResolvedValue(undefined),
+    };
+
+    tasksService = new TasksService(
+      prisma as unknown as PrismaService,
+      notificationsService as unknown as NotificationsService,
+    );
     service = new CommentsService(
       prisma as unknown as PrismaService,
       tasksService,
+      notificationsService as unknown as NotificationsService,
     );
   });
 

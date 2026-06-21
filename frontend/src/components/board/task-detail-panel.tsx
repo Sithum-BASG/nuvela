@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { LabelManager } from "./label-manager";
 import { CommentThread } from "./comment-thread";
 import { AttachmentSection } from "./attachment-section";
+import { ActivityTimeline } from "./activity-timeline";
 
 type Props = {
   task: TaskRow | null;
@@ -441,6 +442,9 @@ export function TaskDetailPanel({
                   canModerate={isPm}
                 />
               )}
+
+              {/* Activity */}
+              <ActivityTimeline taskId={task.id} />
             </div>
 
             {/* Footer */}

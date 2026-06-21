@@ -6,6 +6,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { MustResetGuard } from './common/guards/must-reset.guard';
@@ -29,6 +30,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     OrganizationsModule,
     ProjectsModule,
+    DashboardModule,
     TasksModule,
     NotificationsModule,
   ],

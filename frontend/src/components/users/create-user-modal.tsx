@@ -26,24 +26,29 @@ import { ApiError } from "@/lib/api-client";
 import { getFieldErrorMessage } from "@/lib/error-messages";
 import type { OrgUser, UserRole } from "@/lib/users-api.types";
 
-const ROLE_OPTIONS = [
-  { value: "ADMIN", label: "Admin" },
+const BASE_ROLE_OPTIONS = [
   { value: "PROJECT_MANAGER", label: "Project Manager" },
   { value: "COLLABORATOR", label: "Collaborator" },
 ] as const;
 
 type Props = {
   open: boolean;
+  actorRole?: UserRole;
   onClose: () => void;
   onCreated: (user: OrgUser) => void;
 };
 
-export function CreateUserModal({ open, onClose, onCreated }: Props) {
+export function CreateUserModal({ open, actorRole, onClose, onCreated }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<UserRole>("COLLABORATOR");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; role?: string }>({});
+
+  const roleOptions =
+    actorRole === "OWNER"
+      ? [{ value: "ADMIN" as const, label: "Admin" }, ...BASE_ROLE_OPTIONS]
+      : [...BASE_ROLE_OPTIONS];
 
   function validate() {
     const e: typeof errors = {};
@@ -90,7 +95,7 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="w-[440px] gap-0 rounded-[14px] p-0 shadow-[0px_1px_2px_rgba(0,0,0,0.05),0px_12px_16px_rgba(0,0,0,0.10)]">
+      <DialogContent showCloseButton={false} className="w-[440px] gap-0 rounded-[14px] p-0 shadow-[0px_1px_2px_rgba(0,0,0,0.05),0px_12px_16px_rgba(0,0,0,0.10)]">
         <form onSubmit={handleSubmit} noValidate>
           {/* Header */}
           <div className="flex items-start justify-between px-6 pb-5 pt-6">
@@ -168,7 +173,7 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ROLE_OPTIONS.map((o) => (
+                  {roleOptions.map((o) => (
                     <SelectItem key={o.value} value={o.value}>
                       {o.label}
                     </SelectItem>

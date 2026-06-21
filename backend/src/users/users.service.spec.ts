@@ -98,14 +98,31 @@ describe('UsersService', () => {
     });
   });
 
-  it('rejects createUser with ADMIN role', async () => {
+  it('rejects createUser with ADMIN role when actor is ADMIN', async () => {
     await expect(
-      service.createUser('org-1', Role.OWNER, {
+      service.createUser('org-1', Role.ADMIN, {
         name: 'Admin',
         email: 'admin@example.com',
         role: Role.ADMIN,
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('creates an ADMIN user when actor is OWNER', async () => {
+    prisma.user.findFirst.mockResolvedValue(null);
+    prisma.user.create.mockResolvedValue({
+      ...userRow,
+      role: Role.ADMIN,
+    });
+
+    const result = await service.createUser('org-1', Role.OWNER, {
+      name: 'Admin',
+      email: 'admin@example.com',
+      role: Role.ADMIN,
+    });
+
+    expect(result.role).toBe(Role.ADMIN);
+    expect(prisma.user.create).toHaveBeenCalled();
   });
 
   it('creates a PROJECT_MANAGER user and emails a temporary password', async () => {

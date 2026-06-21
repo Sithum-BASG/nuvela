@@ -382,11 +382,13 @@ export default function UsersPage() {
       {/* Modals */}
       <CreateUserModal
         open={createOpen}
+        actorRole={me?.role}
         onClose={() => setCreateOpen(false)}
         onCreated={(u) => setUsers((prev) => [...prev, u])}
       />
       <EditUserModal
         user={editTarget}
+        actorRole={me?.role}
         onClose={() => setEditTarget(null)}
         onUpdated={(u) => setUsers((prev) => prev.map((x) => (x.id === u.id ? u : x)))}
       />

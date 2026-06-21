@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { useAuth } from "@/providers/auth-provider";
+import { SocketProvider } from "@/providers/socket-provider";
 import { Sidebar } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
 import { LogoSymbol } from "@/components/logo";
@@ -26,7 +27,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (status === "unauthenticated") return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <SocketProvider>
+      <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden shrink-0 lg:block">
         <Sidebar />
@@ -61,6 +63,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Topbar onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
-    </div>
+      </div>
+    </SocketProvider>
   );
 }

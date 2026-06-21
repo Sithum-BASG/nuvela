@@ -328,16 +328,27 @@ export class AuthService {
   ): Promise<User | null> {
     const users = await this.prisma.user.findMany({
       where: { email },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
     });
 
+    const matches: User[] = [];
     for (const user of users) {
       if (await comparePassword(password, user.passwordHash)) {
-        return user;
+        matches.push(user);
       }
     }
 
-    return null;
+    if (matches.length === 0) {
+      return null;
+    }
+
+    // Same email can exist in multiple orgs (e.g. retried Owner signup). Prefer
+    // a verified, usable account over an older pending duplicate.
+    const verified = matches.find(
+      (user) =>
+        user.emailVerified && user.status !== UserStatus.DEACTIVATED,
+    );
+    return verified ?? matches[0];
   }
 
   private toTokenPayload(user: User): AuthTokenPayload {

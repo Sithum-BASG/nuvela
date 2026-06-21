@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CheckSquare, Calendar, AlertCircle, AlertTriangle, Minus, Trash2 } from "lucide-react";
+import { CheckSquare, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
 import { tasksApi } from "@/lib/tasks-api";
 import type { TaskRow } from "@/lib/tasks-api.types";
+import { avatarColor, initials } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
 
@@ -21,13 +22,13 @@ type Props = {
   onDeleted?: (taskId: string) => void;
 };
 
-const PRIORITY_ICON = {
-  LOW: <Minus className="size-[12px] text-priority-low" strokeWidth={2.5} />,
-  MEDIUM: <AlertTriangle className="size-[12px] text-priority-medium" strokeWidth={2.5} />,
-  HIGH: <AlertCircle className="size-[12px] text-priority-high" strokeWidth={2.5} />,
-};
+const PRIORITY_LABEL = { LOW: "Low", MEDIUM: "Medium", HIGH: "High" } as const;
 
-const PRIORITY_LABEL = { LOW: "Low", MEDIUM: "Medium", HIGH: "High" };
+const PRIORITY_DOT = {
+  LOW: "bg-priority-low",
+  MEDIUM: "bg-priority-medium",
+  HIGH: "bg-priority-high",
+} as const;
 
 export function TaskCard({
   task,
@@ -53,6 +54,8 @@ export function TaskCard({
   };
 
   const isGhost = isSortableDragging && !isDragging;
+  const visibleAssignees = task.assignees.slice(0, 3);
+  const overflowCount = task.assignees.length - visibleAssignees.length;
 
   async function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
@@ -77,35 +80,21 @@ export function TaskCard({
       {...listeners}
       onClick={onClick}
       className={cn(
-        "group relative flex cursor-grab flex-col gap-2 rounded-[8px] border border-border bg-card p-3 shadow-sm",
-        "transition-[opacity,shadow] duration-150 motion-reduce:transition-none",
-        "hover:shadow-md hover:border-border/70 active:cursor-grabbing",
+        "group relative flex cursor-grab flex-col gap-2.5 rounded-card border border-border bg-card p-3.5",
+        "transition-[opacity,box-shadow] duration-150 motion-reduce:transition-none",
+        "hover:border-border/80 active:cursor-grabbing",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         isGhost && "opacity-40",
         isDragging && "rotate-[1.5deg] shadow-lg opacity-95 cursor-grabbing",
-        deleting && "opacity-50 pointer-events-none",
+        deleting && "pointer-events-none opacity-50",
       )}
     >
-      {/* Priority + title row */}
-      <div className="flex items-start gap-1.5">
-        <span
-          className="mt-[3px] shrink-0"
-          aria-label={`Priority: ${PRIORITY_LABEL[task.priority]}`}
-        >
-          {PRIORITY_ICON[task.priority]}
-        </span>
-        <span className="text-[13px] font-medium leading-snug text-foreground line-clamp-2">
-          {task.title}
-        </span>
-      </div>
-
-      {/* Labels */}
       {task.labels.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {task.labels.map((label) => (
             <span
               key={label.id}
-              className="inline-flex h-[18px] items-center rounded-[4px] px-1.5 text-[11px] font-medium text-white"
+              className="inline-flex items-center rounded-badge px-2 py-[3px] text-[11px] font-medium text-white"
               style={{ backgroundColor: label.color }}
             >
               {label.name}
@@ -114,68 +103,77 @@ export function TaskCard({
         </div>
       )}
 
-      {/* Footer row: checklist + due date + assignees + delete */}
-      <div className="flex items-center gap-2">
-        {/* Checklist progress */}
-        {task.checklistTotal > 0 && (
-          <div className="flex items-center gap-1 text-text-secondary">
-            <CheckSquare className="size-[12px]" strokeWidth={1.75} />
-            <span className="text-[11px]">
-              {task.checklistDone}/{task.checklistTotal}
-            </span>
+      <p className="text-[14px] font-medium leading-5 text-foreground line-clamp-2">
+        {task.title}
+      </p>
+
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2.5 text-[12px]">
+          <div className="flex items-center gap-1.5 text-text-secondary">
+            <span
+              className={cn("size-[7px] shrink-0 rounded-full", PRIORITY_DOT[task.priority])}
+              aria-hidden
+            />
+            <span>{PRIORITY_LABEL[task.priority]}</span>
           </div>
-        )}
 
-        {/* Due date */}
-        {task.dueDate && (
-          <div className="flex items-center gap-1 text-text-secondary">
-            <Calendar className="size-[12px]" strokeWidth={1.75} />
-            <span className="text-[11px]">
-              {format(new Date(task.dueDate), "MMM d")}
-            </span>
-          </div>
-        )}
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Assignee avatars */}
-        {task.assignees.length > 0 && (
-          <div className="flex -space-x-1.5">
-            {task.assignees.slice(0, 3).map((a) => (
-              <span
-                key={a.userId}
-                className="flex size-[20px] items-center justify-center rounded-full bg-primary text-[9px] font-semibold text-primary-foreground ring-2 ring-card"
-                title={a.name}
-              >
-                {a.name.slice(0, 1).toUpperCase()}
+          {task.checklistTotal > 0 && (
+            <div className="flex items-center gap-1 text-text-muted">
+              <CheckSquare className="size-3" strokeWidth={1.75} aria-hidden />
+              <span>
+                {task.checklistDone}/{task.checklistTotal}
               </span>
-            ))}
-            {task.assignees.length > 3 && (
-              <span className="flex size-[20px] items-center justify-center rounded-full bg-border text-[9px] font-medium text-text-secondary ring-2 ring-card">
-                +{task.assignees.length - 3}
-              </span>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* Delete (PM/Owner only) */}
-        {isPm && (
-          <button
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={handleDelete}
-            disabled={deleting}
-            className="flex size-5 items-center justify-center rounded-[4px] text-text-muted opacity-0 transition-opacity hover:bg-danger-tint hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger/50 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label={`Delete ${task.title}`}
-          >
-            {deleting ? (
-              <InlineSpinner className="size-[11px]" />
-            ) : (
-              <Trash2 className="size-[11px]" strokeWidth={2} />
-            )}
-          </button>
-        )}
+          {task.dueDate && (
+            <div className="flex items-center gap-1 text-text-muted">
+              <span aria-hidden>·</span>
+              <span>{format(new Date(task.dueDate), "MMM d")}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center">
+          {overflowCount > 0 && (
+            <span
+              className="mr-[-8px] flex size-6 items-center justify-center rounded-[12px] border-2 border-card bg-accent-tint text-[10px] font-medium text-accent-strong"
+              title={`${overflowCount} more assignee${overflowCount === 1 ? "" : "s"}`}
+            >
+              +{overflowCount}
+            </span>
+          )}
+          {visibleAssignees.map((assignee, index) => (
+            <span
+              key={assignee.userId}
+              className={cn(
+                "flex size-6 items-center justify-center rounded-full text-[9px] font-semibold text-white ring-2 ring-card",
+                avatarColor(assignee.name),
+                index < visibleAssignees.length - 1 && "mr-[-8px]",
+              )}
+              title={assignee.name}
+            >
+              {initials(assignee.name)}
+            </span>
+          ))}
+        </div>
       </div>
+
+      {isPm && (
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={handleDelete}
+          disabled={deleting}
+          className="absolute top-2 right-2 flex size-5 items-center justify-center rounded-[4px] text-text-muted opacity-0 transition-opacity hover:bg-danger-tint hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger/50 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={`Delete ${task.title}`}
+        >
+          {deleting ? (
+            <InlineSpinner className="size-[11px]" />
+          ) : (
+            <Trash2 className="size-[11px]" strokeWidth={2} />
+          )}
+        </button>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { MustResetGuard } from './common/guards/must-reset.guard';
@@ -15,6 +16,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProjectsModule } from './projects/projects.module';
+import { SearchModule } from './search/search.module';
 import { TasksModule } from './tasks/tasks.module';
 import { UsersModule } from './users/users.module';
 
@@ -29,6 +31,8 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     OrganizationsModule,
     ProjectsModule,
+    DashboardModule,
+    SearchModule,
     TasksModule,
     NotificationsModule,
   ],

@@ -1,5 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlowFetchNotice } from "@/components/ui/slow-fetch-notice";
+import type { ProjectsView } from "@/components/projects/projects-view-toggle";
 
 export function LoadingShell({
   isSlow,
@@ -53,7 +54,38 @@ export function BoardPageSkeleton({ isSlow }: { isSlow?: boolean }) {
   );
 }
 
-export function ProjectsListSkeleton({ isSlow }: { isSlow?: boolean }) {
+export function ProjectsListSkeleton({
+  view = "list",
+  isSlow,
+}: {
+  view?: ProjectsView;
+  isSlow?: boolean;
+}) {
+  if (view === "cards") {
+    return (
+      <LoadingShell isSlow={isSlow}>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="flex min-h-[150px] flex-col gap-3 rounded-[12px] border border-border bg-card px-5 py-[18px]"
+            >
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="size-7 shrink-0 rounded-[8px]" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <Skeleton className="h-3 w-full" />
+              <div className="mt-auto flex items-center justify-between">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-3 w-10" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </LoadingShell>
+    );
+  }
+
   return (
     <LoadingShell isSlow={isSlow}>
       <div className="flex flex-col gap-[10px] rounded-[12px] border border-border bg-card p-[10px]">
@@ -67,6 +99,8 @@ export function ProjectsListSkeleton({ isSlow }: { isSlow?: boolean }) {
               <Skeleton className="h-3 w-40" />
               <Skeleton className="h-2.5 w-56" />
             </div>
+            <Skeleton className="hidden h-3 w-8 sm:block" />
+            <Skeleton className="hidden h-9 w-24 rounded-full md:block" />
             <Skeleton className="h-[22px] w-14 rounded-[6px]" />
           </div>
         ))}

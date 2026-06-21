@@ -8,6 +8,11 @@ import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProjectCard } from "@/components/projects/project-card";
+import { ProjectGridCard } from "@/components/projects/project-grid-card";
+import {
+  ProjectsViewToggle,
+  type ProjectsView,
+} from "@/components/projects/projects-view-toggle";
 import { CreateProjectModal } from "@/components/projects/create-project-modal";
 import { useAuth } from "@/providers/auth-provider";
 import { projectsApi } from "@/lib/projects-api";
@@ -17,14 +22,27 @@ import { ErrorCallout } from "@/components/ui/error-callout";
 import { useSlowFetch } from "@/hooks/use-slow-fetch";
 import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 
+const VIEW_STORAGE_KEY = "nuvela:projects-view";
+
+function readStoredView(): ProjectsView {
+  if (typeof window === "undefined") return "list";
+  const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+  return stored === "cards" ? "cards" : "list";
+}
+
 export default function ProjectsPage() {
   const { user: me } = useAuth();
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [view, setView] = useState<ProjectsView>(() => readStoredView());
 
-  // PM and Owner create projects; Admin sees an empty list (API returns []).
+  function handleViewChange(next: ProjectsView) {
+    setView(next);
+    window.localStorage.setItem(VIEW_STORAGE_KEY, next);
+  }
+
   const canCreate = me?.role === "PROJECT_MANAGER" || me?.role === "OWNER";
 
   const load = useCallback(async () => {
@@ -56,7 +74,6 @@ export default function ProjectsPage() {
     }
   }
 
-  // Owning PM / Owner may manage a project's row actions.
   function canManage(project: ProjectRow) {
     return me?.role === "OWNER" || (me?.role === "PROJECT_MANAGER" && project.managerId === me.id);
   }
@@ -75,7 +92,13 @@ export default function ProjectsPage() {
         }
       />
 
-      {loading && <ProjectsListSkeleton isSlow={isSlow} />}
+      {!loading && !loadError && projects.length > 0 && (
+        <div className="flex justify-end">
+          <ProjectsViewToggle value={view} onChange={handleViewChange} />
+        </div>
+      )}
+
+      {loading && <ProjectsListSkeleton view={view} isSlow={isSlow} />}
 
       {!loading && loadError && (
         <ErrorCallout variant={loadError} onRetry={() => void load()} />
@@ -98,11 +121,23 @@ export default function ProjectsPage() {
         />
       )}
 
-      {/* Project rows */}
-      {!loading && !loadError && projects.length > 0 && (
+      {!loading && !loadError && projects.length > 0 && view === "list" && (
         <div className="flex flex-col gap-[10px] rounded-[12px] border border-border bg-card p-[10px]">
           {projects.map((project) => (
             <ProjectCard
+              key={project.id}
+              project={project}
+              canManage={canManage(project)}
+              onArchive={handleArchive}
+            />
+          ))}
+        </div>
+      )}
+
+      {!loading && !loadError && projects.length > 0 && view === "cards" && (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+          {projects.map((project) => (
+            <ProjectGridCard
               key={project.id}
               project={project}
               canManage={canManage(project)}

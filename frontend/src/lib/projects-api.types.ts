@@ -3,6 +3,11 @@
 // computed memberCount); MemberRow mirrors the members listing. The frontend
 // never derives authorization from these — the API enforces RBAC (404 hides
 // cross-tenant existence) and we render whatever it returns.
+export type ProjectMemberPreview = {
+  userId: string;
+  name: string;
+};
+
 export type ProjectRow = {
   id: string;
   organizationId: string;
@@ -12,6 +17,9 @@ export type ProjectRow = {
   status: "ACTIVE" | "ARCHIVED";
   managerId: string;
   memberCount: number;
+  totalTasks: number;
+  completedTasks: number;
+  memberPreview: ProjectMemberPreview[];
   createdAt: string;
   updatedAt: string;
 };

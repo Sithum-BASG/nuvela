@@ -18,10 +18,12 @@ import type { TaskRow, ChecklistItemRow } from "@/lib/tasks-api.types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LabelManager } from "./label-manager";
+import { CommentThread } from "./comment-thread";
 
 type Props = {
   task: TaskRow | null;
   isPm: boolean;
+  me: { id: string; name: string } | null;
   onClose: () => void;
   onUpdated: (task: TaskRow) => void;
   onDeleted: (taskId: string) => void;
@@ -48,6 +50,7 @@ const PRIORITY_CONFIG = {
 export function TaskDetailPanel({
   task,
   isPm,
+  me,
   onClose,
   onUpdated,
   onDeleted,
@@ -418,6 +421,16 @@ export function TaskDetailPanel({
                   </div>
                 )}
               </div>
+
+              {/* Comments */}
+              {me && (
+                <CommentThread
+                  taskId={task.id}
+                  projectId={task.projectId}
+                  me={me}
+                  canModerate={isPm}
+                />
+              )}
             </div>
 
             {/* Footer */}

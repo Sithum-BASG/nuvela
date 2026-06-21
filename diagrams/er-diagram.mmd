@@ -1,0 +1,23 @@
+erDiagram
+  Organization ||--o{ User : has
+  Organization ||--o{ Project : owns
+  Organization ||--o{ Task : scopes
+  Organization ||--o{ Notification : scopes
+  User ||--o{ Project : manages
+  User ||--o{ ProjectMember : joins
+  Project ||--o{ ProjectMember : has
+  Project ||--o{ Column : has
+  Project ||--o{ Task : contains
+  Project ||--o{ Label : has
+  Column ||--o{ Task : holds
+  Task ||--o{ TaskAssignee : has
+  User ||--o{ TaskAssignee : assigned
+  Task ||--o{ TaskLabel : tagged
+  Label ||--o{ TaskLabel : applied
+  Task ||--o{ ChecklistItem : has
+  Task ||--o{ Comment : has
+  Comment ||--o{ CommentMention : mentions
+  User ||--o{ CommentMention : mentioned
+  Task ||--o{ Attachment : has
+  Task ||--o{ ActivityLog : logs
+  User ||--o{ RefreshToken : sessions

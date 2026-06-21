@@ -30,7 +30,9 @@ import { cn } from "@/lib/utils";
 import type { OrgUser, ProjectStub, UserStatus } from "@/lib/users-api.types";
 import { UsersTableSkeleton } from "@/components/ui/loading-states";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorCallout } from "@/components/ui/error-callout";
 import { useSlowFetch } from "@/hooks/use-slow-fetch";
+import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 
 const ROLE_LABEL: Record<string, string> = {
   OWNER: "Owner",
@@ -51,6 +53,7 @@ export default function UsersPage() {
   const { user: me } = useAuth();
   const [users, setUsers] = useState<OrgUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<Set<StatusFilter>>(new Set());
 
@@ -64,11 +67,13 @@ export default function UsersPage() {
   const canManage = me?.role === "OWNER" || me?.role === "ADMIN";
 
   const load = useCallback(async () => {
+    setLoadError(null);
+    setLoading(true);
     try {
       const data = await listUsers();
       setUsers(data);
-    } catch {
-      toast.error("Failed to load users.");
+    } catch (err) {
+      setLoadError(classifyLoadError(err));
     } finally {
       setLoading(false);
     }
@@ -245,8 +250,13 @@ export default function UsersPage() {
 
         {loading && <UsersTableSkeleton isSlow={isSlow} />}
 
-        {/* Empty */}
-        {!loading && filtered.length === 0 && (
+        {!loading && loadError && (
+          <div className="px-5 py-6">
+            <ErrorCallout variant={loadError} onRetry={() => void load()} />
+          </div>
+        )}
+
+        {!loading && !loadError && filtered.length === 0 && (
           <div className="px-6 py-8">
             <EmptyState
               icon={Users}
@@ -271,6 +281,7 @@ export default function UsersPage() {
 
         {/* Data rows */}
         {!loading &&
+          !loadError &&
           filtered.map((u) => {
             const isDeactivated = u.status === "DEACTIVATED";
             const isPending = u.status === "PENDING";

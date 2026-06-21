@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { createUser } from "@/lib/users-api";
 import { ApiError } from "@/lib/api-client";
+import { getFieldErrorMessage } from "@/lib/error-messages";
 import type { OrgUser, UserRole } from "@/lib/users-api.types";
 
 const ROLE_OPTIONS = [
@@ -64,8 +65,13 @@ export function CreateUserModal({ open, onClose, onCreated }: Props) {
       onCreated(user);
       handleClose();
     } catch (err) {
-      if (err instanceof ApiError && err.status === 409) {
-        setErrors({ email: "A user with this email already exists" });
+      if (err instanceof ApiError) {
+        const emailMsg = getFieldErrorMessage(err.code, "email", undefined);
+        if (emailMsg) {
+          setErrors({ email: emailMsg });
+        } else {
+          toast.error(err.message);
+        }
       } else {
         toast.error("Failed to create user. Please try again.");
       }

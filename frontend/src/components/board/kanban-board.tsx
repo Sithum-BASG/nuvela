@@ -24,7 +24,9 @@ import { TaskCard } from "./task-card";
 import { ApiError } from "@/lib/api-client";
 import { TaskDetailPanel } from "./task-detail-panel";
 import { BoardSkeleton } from "@/components/ui/loading-states";
+import { ErrorCallout } from "@/components/ui/error-callout";
 import { useSlowFetch } from "@/hooks/use-slow-fetch";
+import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 
 type Props = {
   projectId: string;
@@ -37,6 +39,7 @@ export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Prop
   const [columns, setColumns] = useState<ColumnRow[]>([]);
   const [tasks, setTasks] = useState<TaskRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
 
   // active drag state
   const [activeTask, setActiveTask] = useState<TaskRow | null>(null);
@@ -56,6 +59,8 @@ export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Prop
     (me?.role === "PROJECT_MANAGER" && me.id === projectManagerId);
 
   const load = useCallback(async () => {
+    setLoadError(null);
+    setLoading(true);
     try {
       const [cols, tks] = await Promise.all([
         tasksApi.columns.list(projectId),
@@ -63,8 +68,8 @@ export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Prop
       ]);
       setColumns(cols);
       setTasks(tks);
-    } catch {
-      toast.error("Failed to load board.");
+    } catch (err) {
+      setLoadError(classifyLoadError(err));
     } finally {
       setLoading(false);
     }
@@ -163,14 +168,8 @@ export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Prop
       // Rollback optimistic move
       setTasks(tasks);
       if (err instanceof ApiError) {
-        if (err.code === "PM_GATED") {
-          toast.error("Only a Project Manager can move tasks into this column.");
-          return;
-        }
-        if (err.code === "NOT_ASSIGNEE") {
-          toast.error("You can only move tasks you are assigned to.");
-          return;
-        }
+        toast.error(err.message);
+        return;
       }
       toast.error("Failed to move task.");
     }
@@ -179,6 +178,14 @@ export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Prop
   const isSlow = useSlowFetch(loading);
 
   if (loading) return <BoardSkeleton isSlow={isSlow} />;
+
+  if (loadError) {
+    return (
+      <div className="px-6 py-4">
+        <ErrorCallout variant={loadError} onRetry={() => void load()} />
+      </div>
+    );
+  }
 
   return (
     <>

@@ -9,7 +9,8 @@ import {
   AuthLayout,
 } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
-import { authApi } from "@/lib/auth-api";
+import { ErrorCallout } from "@/components/ui/error-callout";
+import { authApi, ApiError } from "@/lib/auth-api";
 
 type Status = "verifying" | "success" | "error";
 
@@ -17,6 +18,7 @@ function VerifyContent() {
   const router = useRouter();
   const token = useSearchParams().get("token");
   const [status, setStatus] = useState<Status>(token ? "verifying" : "error");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // React 19 Strict Mode runs effects twice in dev; guard the one-shot call.
   const ran = useRef(false);
 
@@ -26,7 +28,12 @@ function VerifyContent() {
     authApi
       .verifyEmail(token)
       .then(() => setStatus("success"))
-      .catch(() => setStatus("error"));
+      .catch((err) => {
+        setErrorMessage(
+          err instanceof ApiError ? err.message : "This link is invalid or has expired.",
+        );
+        setStatus("error");
+      });
   }, [token]);
 
   if (status === "verifying") {
@@ -45,7 +52,16 @@ function VerifyContent() {
       <AuthCard>
         <AuthHeader
           title="Verification failed"
-          subtitle="This link is invalid or has expired. Try logging in to request a new one."
+          subtitle="We couldn't confirm your email address."
+        />
+        <ErrorCallout
+          variant="not-found"
+          title="Invalid or expired link"
+          description={
+            errorMessage ??
+            "This link is invalid or has expired. Try logging in to request a new one."
+          }
+          className="w-full"
         />
         <div className="w-full">
           <Button

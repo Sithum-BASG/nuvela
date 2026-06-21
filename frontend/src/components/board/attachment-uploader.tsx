@@ -11,6 +11,8 @@ import {
   formatFileSize,
   type AttachmentRow,
 } from "@/lib/attachments-api";
+import { ApiError } from "@/lib/api-client";
+import { getFriendlyErrorMessage } from "@/lib/error-messages";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -59,13 +61,11 @@ export function AttachmentUploader({ taskId, onUploaded }: Props) {
       onUploaded(row);
       toast.success("File uploaded.");
     } catch (err) {
-      const code =
-        err && typeof err === "object" && "code" in err
-          ? String((err as { code: string }).code)
-          : "";
-      if (code === "FILE_TOO_LARGE") toast.error("File is too large. Max 10 MB.");
-      else if (code === "UNSUPPORTED_TYPE") toast.error("Unsupported file type.");
-      else toast.error("Upload failed.");
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : getFriendlyErrorMessage(undefined);
+      toast.error(message);
     } finally {
       setUploading(null);
     }

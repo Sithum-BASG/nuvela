@@ -51,9 +51,9 @@ function ResetContent() {
       setDone(true);
     } catch (err) {
       setFormError(
-        err instanceof ApiError && err.status === 401
-          ? "This reset link is invalid or has expired."
-          : "Something went wrong. Please try again."
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong. Please try again.",
       );
     }
   }

@@ -13,23 +13,28 @@ import { useAuth } from "@/providers/auth-provider";
 import { projectsApi } from "@/lib/projects-api";
 import type { ProjectRow } from "@/lib/projects-api.types";
 import { ProjectsListSkeleton } from "@/components/ui/loading-states";
+import { ErrorCallout } from "@/components/ui/error-callout";
 import { useSlowFetch } from "@/hooks/use-slow-fetch";
+import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 
 export default function ProjectsPage() {
   const { user: me } = useAuth();
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
   // PM and Owner create projects; Admin sees an empty list (API returns []).
   const canCreate = me?.role === "PROJECT_MANAGER" || me?.role === "OWNER";
 
   const load = useCallback(async () => {
+    setLoadError(null);
+    setLoading(true);
     try {
       const data = await projectsApi.list();
       setProjects(data);
-    } catch {
-      toast.error("Failed to load projects.");
+    } catch (err) {
+      setLoadError(classifyLoadError(err));
     } finally {
       setLoading(false);
     }
@@ -72,8 +77,11 @@ export default function ProjectsPage() {
 
       {loading && <ProjectsListSkeleton isSlow={isSlow} />}
 
-      {/* Empty state */}
-      {!loading && projects.length === 0 && (
+      {!loading && loadError && (
+        <ErrorCallout variant={loadError} onRetry={() => void load()} />
+      )}
+
+      {!loading && !loadError && projects.length === 0 && (
         <EmptyState
           icon={FolderKanban}
           title="No projects yet"
@@ -91,7 +99,7 @@ export default function ProjectsPage() {
       )}
 
       {/* Project rows */}
-      {!loading && projects.length > 0 && (
+      {!loading && !loadError && projects.length > 0 && (
         <div className="flex flex-col gap-[10px] rounded-[12px] border border-border bg-card p-[10px]">
           {projects.map((project) => (
             <ProjectCard

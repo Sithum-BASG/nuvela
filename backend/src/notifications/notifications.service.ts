@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, Prisma } from '@prisma/client';
 import type { CurrentUserPayload } from '../common/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsGateway } from './notifications.gateway';
 
 export type NotificationRow = {
   id: string;
@@ -21,7 +22,10 @@ const NOTIFICATION_SELECT = {
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gateway: NotificationsGateway,
+  ) {}
 
   async listOwn(
     caller: CurrentUserPayload,
@@ -57,5 +61,51 @@ export class NotificationsService {
       where: { recipientId: caller.userId, isRead: false },
       data: { isRead: true },
     });
+  }
+
+  async notify(input: {
+    organizationId: string;
+    recipientId: string;
+    type: NotificationType;
+    payload: Record<string, unknown>;
+  }): Promise<void> {
+    const row = await this.prisma.notification.create({
+      data: {
+        organizationId: input.organizationId,
+        recipientId: input.recipientId,
+        type: input.type,
+        payload: input.payload as Prisma.InputJsonValue,
+      },
+    });
+
+    try {
+      this.gateway.emitToUser(input.recipientId, 'notification', {
+        id: row.id,
+        type: input.type,
+        payload: input.payload,
+        isRead: false,
+        createdAt: row.createdAt,
+      });
+    } catch {
+      // Persist-then-push: socket errors must not fail the originating request.
+    }
+  }
+
+  async notifyMany(
+    organizationId: string,
+    recipientIds: string[],
+    type: NotificationType,
+    payload: Record<string, unknown>,
+    actorId?: string,
+  ): Promise<void> {
+    const uniqueRecipients = [
+      ...new Set(recipientIds.filter((id): id is string => Boolean(id))),
+    ].filter((id) => id !== actorId);
+
+    await Promise.all(
+      uniqueRecipients.map((recipientId) =>
+        this.notify({ organizationId, recipientId, type, payload }),
+      ),
+    );
   }
 }

@@ -108,7 +108,10 @@ describe('LabelsService', () => {
     );
 
     // TasksService is needed for findAccessibleProject in listLabels
-    tasksService = new TasksService(prisma as unknown as PrismaService);
+    tasksService = new TasksService(
+      prisma as unknown as PrismaService,
+      { notify: jest.fn(), notifyMany: jest.fn() } as never,
+    );
     service = new LabelsService(
       prisma as unknown as PrismaService,
       tasksService,

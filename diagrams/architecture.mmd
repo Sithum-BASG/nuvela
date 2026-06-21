@@ -1,0 +1,29 @@
+flowchart TB
+  subgraph client [Frontend — Vercel]
+    Next[Next.js App Router]
+    RQ[TanStack Query]
+    WSClient[socket.io-client]
+    Next --> RQ
+    Next --> WSClient
+  end
+
+  subgraph api [Backend — Render]
+    Nest[NestJS REST API]
+    GW[Socket.IO Gateway]
+    Auth[JWT Guards + RBAC]
+    Nest --> Auth
+    GW --> Auth
+  end
+
+  subgraph data [Supabase]
+    PG[(PostgreSQL)]
+    Storage[(Private Storage)]
+  end
+
+  Resend[Resend Email]
+
+  RQ -->|HTTPS + cookies| Nest
+  WSClient -->|WSS + cookies| GW
+  Nest --> PG
+  Nest --> Storage
+  Nest --> Resend

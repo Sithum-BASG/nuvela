@@ -5,6 +5,7 @@ import { AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -145,7 +146,11 @@ export function DeactivatePmTransferModal({
             disabled={loading || !allAssigned()}
             onClick={handleConfirm}
           >
-            {loading ? "Deactivating…" : "Deactivate user"}
+            <ButtonPendingLabel
+              pending={loading}
+              label="Deactivate user"
+              pendingLabel="Deactivating…"
+            />
           </Button>
         </div>
       </DialogContent>

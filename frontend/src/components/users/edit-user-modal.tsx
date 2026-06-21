@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -183,7 +184,7 @@ export function EditUserModal({ user, onClose, onUpdated }: Props) {
               Cancel
             </Button>
             <Button type="submit" disabled={loading || isOwner}>
-              {loading ? "Saving…" : "Save changes"}
+              <ButtonPendingLabel pending={loading} label="Save changes" pendingLabel="Saving…" />
             </Button>
           </div>
         </form>

@@ -10,6 +10,8 @@ import { CreateProjectModal } from "@/components/projects/create-project-modal";
 import { useAuth } from "@/providers/auth-provider";
 import { projectsApi } from "@/lib/projects-api";
 import type { ProjectRow } from "@/lib/projects-api.types";
+import { ProjectsListSkeleton } from "@/components/ui/loading-states";
+import { useSlowFetch } from "@/hooks/use-slow-fetch";
 
 export default function ProjectsPage() {
   const { user: me } = useAuth();
@@ -52,6 +54,8 @@ export default function ProjectsPage() {
     return me?.role === "OWNER" || (me?.role === "PROJECT_MANAGER" && project.managerId === me.id);
   }
 
+  const isSlow = useSlowFetch(loading);
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 p-8">
       <PageHeader
@@ -64,24 +68,7 @@ export default function ProjectsPage() {
         }
       />
 
-      {/* Loading skeleton */}
-      {loading && (
-        <div className="flex flex-col gap-[10px] rounded-[12px] border border-border bg-card p-[10px]">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="flex h-[68px] items-center gap-[14px] rounded-[12px] border border-border px-4 py-3"
-            >
-              <div className="h-[38px] w-[10px] shrink-0 animate-pulse rounded-[3px] bg-border" />
-              <div className="flex flex-1 flex-col gap-1.5">
-                <div className="h-3 w-40 animate-pulse rounded bg-border" />
-                <div className="h-2.5 w-56 animate-pulse rounded bg-border" />
-              </div>
-              <div className="h-[22px] w-14 animate-pulse rounded-[6px] bg-border" />
-            </div>
-          ))}
-        </div>
-      )}
+      {loading && <ProjectsListSkeleton isSlow={isSlow} />}
 
       {/* Empty state */}
       {!loading && projects.length === 0 && (

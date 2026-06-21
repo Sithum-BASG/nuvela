@@ -28,6 +28,8 @@ import { ApiError } from "@/lib/api-client";
 import { initials, avatarColor } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import type { OrgUser, ProjectStub, UserStatus } from "@/lib/users-api.types";
+import { UsersTableSkeleton } from "@/components/ui/loading-states";
+import { useSlowFetch } from "@/hooks/use-slow-fetch";
 
 const ROLE_LABEL: Record<string, string> = {
   OWNER: "Owner",
@@ -149,6 +151,8 @@ export default function UsersPage() {
       u.id !== deactivateTarget?.id,
   );
 
+  const isSlow = useSlowFetch(loading);
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-8">
       <PageHeader
@@ -238,29 +242,7 @@ export default function UsersPage() {
           <div className="w-[90px]" />
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex flex-col">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex h-[64px] items-center border-b border-border px-5">
-                <div className="flex flex-1 items-center gap-3">
-                  <div className="size-9 animate-pulse rounded-full bg-border" />
-                  <div className="flex flex-col gap-1.5">
-                    <div className="h-3 w-28 animate-pulse rounded bg-border" />
-                    <div className="h-2.5 w-20 animate-pulse rounded bg-border" />
-                  </div>
-                </div>
-                <div className="w-[140px]">
-                  <div className="h-3 w-20 animate-pulse rounded bg-border" />
-                </div>
-                <div className="w-[130px]">
-                  <div className="h-[22px] w-14 animate-pulse rounded-[6px] bg-border" />
-                </div>
-                <div className="w-[90px]" />
-              </div>
-            ))}
-          </div>
-        )}
+        {loading && <UsersTableSkeleton isSlow={isSlow} />}
 
         {/* Empty */}
         {!loading && filtered.length === 0 && (

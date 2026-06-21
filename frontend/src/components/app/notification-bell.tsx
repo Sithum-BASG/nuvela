@@ -5,6 +5,7 @@ import { Bell } from "lucide-react";
 
 import { NotificationItemRow } from "@/components/app/notification-item";
 import { Button } from "@/components/ui/button";
+import { NotificationDropdownSkeleton } from "@/components/ui/loading-states";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 export function NotificationBell() {
   const router = useRouter();
-  const { items, unreadCount, markRead, markAllRead } = useNotifications();
+  const { items, unreadCount, loading, markRead, markAllRead } = useNotifications();
   const recent = items.slice(0, 8);
   const badge =
     unreadCount > 9 ? "9+" : unreadCount > 0 ? String(unreadCount) : null;
@@ -61,7 +62,9 @@ export function NotificationBell() {
           )}
         </div>
         <div className="max-h-[280px] overflow-y-auto p-2">
-          {recent.length === 0 ? (
+          {loading ? (
+            <NotificationDropdownSkeleton />
+          ) : recent.length === 0 ? (
             <p className="px-3 py-8 text-center text-sm text-text-muted">
               You&apos;re all caught up.
             </p>

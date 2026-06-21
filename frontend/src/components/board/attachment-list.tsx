@@ -18,6 +18,7 @@ import {
   type AttachmentRow,
 } from "@/lib/attachments-api";
 import { cn } from "@/lib/utils";
+import { AttachmentRowSkeleton } from "@/components/ui/loading-states";
 
 type Props = {
   taskId: string;
@@ -85,16 +86,7 @@ export function AttachmentList({
   }
 
   if (loading) {
-    return (
-      <div className="flex flex-col gap-2">
-        {[1, 2].map((i) => (
-          <div
-            key={i}
-            className="h-[60px] animate-pulse rounded-[10px] bg-border motion-reduce:animate-none"
-          />
-        ))}
-      </div>
-    );
+    return <AttachmentRowSkeleton count={2} />;
   }
 
   if (attachments.length === 0) {

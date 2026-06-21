@@ -21,6 +21,7 @@ import { LabelManager } from "./label-manager";
 import { CommentThread } from "./comment-thread";
 import { AttachmentSection } from "./attachment-section";
 import { ActivityTimeline } from "./activity-timeline";
+import { ChecklistSkeleton } from "@/components/ui/loading-states";
 
 type Props = {
   task: TaskRow | null;
@@ -346,14 +347,7 @@ export function TaskDetailPanel({
                 )}
 
                 {loadingChecklist ? (
-                  <div className="flex flex-col gap-1.5">
-                    {[1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="h-8 animate-pulse rounded-[6px] bg-border"
-                      />
-                    ))}
-                  </div>
+                  <ChecklistSkeleton count={2} />
                 ) : (
                   <div className="flex flex-col gap-1">
                     {checklist.map((item) => (

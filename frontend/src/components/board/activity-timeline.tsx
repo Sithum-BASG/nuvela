@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import { activityApi, type ActivityRow } from "@/lib/activity-api";
 import { cn } from "@/lib/utils";
+import { ActivityRowSkeleton } from "@/components/ui/loading-states";
 
 type Props = {
   taskId: string;
@@ -99,14 +100,7 @@ export function ActivityTimeline({ taskId, refreshKey = 0 }: Props) {
       </span>
 
       {loading ? (
-        <div className="flex flex-col gap-3 pl-1">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-10 animate-pulse rounded-[8px] bg-border motion-reduce:animate-none"
-            />
-          ))}
-        </div>
+        <ActivityRowSkeleton count={3} />
       ) : rows.length === 0 ? (
         <p className="text-[13px] text-text-muted">No activity yet.</p>
       ) : (

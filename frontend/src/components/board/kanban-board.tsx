@@ -23,6 +23,8 @@ import { BoardColumn } from "./board-column";
 import { TaskCard } from "./task-card";
 import { ApiError } from "@/lib/api-client";
 import { TaskDetailPanel } from "./task-detail-panel";
+import { BoardSkeleton } from "@/components/ui/loading-states";
+import { useSlowFetch } from "@/hooks/use-slow-fetch";
 
 type Props = {
   projectId: string;
@@ -174,7 +176,9 @@ export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Prop
     }
   }
 
-  if (loading) return <BoardSkeleton />;
+  const isSlow = useSlowFetch(loading);
+
+  if (loading) return <BoardSkeleton isSlow={isSlow} />;
 
   return (
     <>
@@ -270,25 +274,4 @@ function applyMoveLocally(
     )
     .concat(sourceColumn)
     .concat(reNumberedTarget);
-}
-
-function BoardSkeleton() {
-  return (
-    <div className="flex h-full gap-3 overflow-x-auto px-6 pb-4 pt-2">
-      {[1, 2, 3, 4].map((i) => (
-        <div
-          key={i}
-          className="flex w-[272px] shrink-0 flex-col gap-2 rounded-[12px] border border-border bg-card p-3"
-        >
-          <div className="mb-1 h-4 w-24 animate-pulse rounded bg-border" />
-          {[1, 2, 3].map((j) => (
-            <div
-              key={j}
-              className="h-[76px] animate-pulse rounded-[8px] bg-border"
-            />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
 }

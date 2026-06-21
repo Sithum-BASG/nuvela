@@ -16,6 +16,7 @@ import {
 } from "@/components/dashboard/dashboard-shared";
 import { avatarColor, initials } from "@/lib/avatar";
 import { dashboardApi, type OrgOverview } from "@/lib/dashboard-api";
+import { useSlowFetch } from "@/hooks/use-slow-fetch";
 import { cn } from "@/lib/utils";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -69,7 +70,9 @@ export function OrgOverviewDashboard({ role }: { role: string }) {
     })();
   }, [load]);
 
-  if (loading || !data) return <DashboardSkeleton />;
+  const isSlow = useSlowFetch(loading);
+
+  if (loading || !data) return <DashboardSkeleton isSlow={isSlow} />;
 
   const totalUsers =
     data.userCounts.OWNER +

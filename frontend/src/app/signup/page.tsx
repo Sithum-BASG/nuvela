@@ -14,6 +14,7 @@ import {
 } from "@/components/auth/auth-shell";
 import { Field, FieldError } from "@/components/auth/field";
 import { Button } from "@/components/ui/button";
+import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { ApiError, authApi } from "@/lib/auth-api";
@@ -111,7 +112,11 @@ export default function SignupPage() {
           {formError && <FieldError>{formError}</FieldError>}
 
           <Button type="submit" disabled={isSubmitting} className="w-full">
-            {isSubmitting ? "Creating workspace…" : "Create workspace"}
+            <ButtonPendingLabel
+              pending={isSubmitting}
+              label="Create workspace"
+              pendingLabel="Creating workspace…"
+            />
           </Button>
         </form>
 

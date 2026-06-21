@@ -199,6 +199,30 @@ describe('MembersService', () => {
     ).resolves.toEqual({ assignedTasks: [] });
   });
 
+  it('removes a member and leaves reassigned tasks unassigned when newAssigneeId is null', async () => {
+    prisma.project.findFirst.mockResolvedValue(projectAccess());
+    prisma.projectMember.findUnique.mockResolvedValue({ id: 'm-1' });
+    prisma.task.findMany.mockResolvedValue([{ id: 'task-1', title: 'Do it' }]);
+    const taskAssignee = {
+      deleteMany: jest.fn(),
+      upsert: jest.fn(),
+    };
+    prisma.$transaction.mockImplementation((cb: (tx: unknown) => unknown) =>
+      cb({
+        taskAssignee,
+        projectMember: { delete: jest.fn() },
+      }),
+    );
+
+    await expect(
+      service.removeMember(pm, 'project-1', 'collab-1', {
+        reassignments: [{ taskId: 'task-1', newAssigneeId: null }],
+      }),
+    ).resolves.toEqual({ assignedTasks: [] });
+    expect(taskAssignee.deleteMany).toHaveBeenCalled();
+    expect(taskAssignee.upsert).not.toHaveBeenCalled();
+  });
+
   it('rejects removing the project manager', async () => {
     prisma.project.findFirst.mockResolvedValue(projectAccess());
     await expect(

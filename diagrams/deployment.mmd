@@ -1,0 +1,13 @@
+flowchart LR
+  Dev[Developer push] --> GH[GitHub]
+  GH --> CI[GitHub Actions CI]
+  GH --> Vercel[Vercel — frontend build]
+  GH --> Render[Render — Docker backend]
+
+  Browser[Browser] -->|HTTPS| Vercel
+  Browser -->|HTTPS REST + WSS| Render
+  Render -->|DATABASE_URL| Supabase[(Supabase Postgres)]
+  Render -->|signed URLs| SupabaseStorage[(Supabase Storage)]
+  Render --> Resend[Resend]
+
+  Cron[keep-alive workflow] -->|GET /health every 10m| Render

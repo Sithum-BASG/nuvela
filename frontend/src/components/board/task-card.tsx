@@ -143,19 +143,27 @@ export function TaskCard({
               +{overflowCount}
             </span>
           )}
-          {visibleAssignees.map((assignee, index) => (
+          {visibleAssignees.length > 0 ? (
+            visibleAssignees.map((assignee, index) => (
+              <span
+                key={assignee.userId}
+                className={cn(
+                  "flex size-6 items-center justify-center rounded-full text-[9px] font-semibold text-white ring-2 ring-card",
+                  avatarColor(assignee.name),
+                  index < visibleAssignees.length - 1 && "mr-[-8px]",
+                )}
+                title={assignee.name}
+              >
+                {initials(assignee.name)}
+              </span>
+            ))
+          ) : (
             <span
-              key={assignee.userId}
-              className={cn(
-                "flex size-6 items-center justify-center rounded-full text-[9px] font-semibold text-white ring-2 ring-card",
-                avatarColor(assignee.name),
-                index < visibleAssignees.length - 1 && "mr-[-8px]",
-              )}
-              title={assignee.name}
-            >
-              {initials(assignee.name)}
-            </span>
-          ))}
+              className="size-6 shrink-0 rounded-full border border-dashed border-border"
+              title="Unassigned"
+              aria-label="Unassigned"
+            />
+          )}
         </div>
       </div>
 

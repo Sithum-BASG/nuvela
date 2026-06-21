@@ -290,6 +290,11 @@ export function KanbanBoard({
 
     <TaskDetailPanel
       task={selectedTask}
+      columnName={
+        selectedTask
+          ? columns.find((c) => c.id === selectedTask.columnId)?.name
+          : undefined
+      }
       isPm={isPm}
       me={me ? { id: me.id, name: me.name } : null}
       onClose={() => setSelectedTask(null)}

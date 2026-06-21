@@ -21,6 +21,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 type Props = {
   taskId: string;
   refreshKey?: number;
+  showTitle?: boolean;
 };
 
 function describeActivity(row: ActivityRow): string {
@@ -71,7 +72,11 @@ function activityIcon(type: ActivityRow["type"]) {
   }
 }
 
-export function ActivityTimeline({ taskId, refreshKey = 0 }: Props) {
+export function ActivityTimeline({
+  taskId,
+  refreshKey = 0,
+  showTitle = true,
+}: Props) {
   const [rows, setRows] = useState<ActivityRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -95,10 +100,12 @@ export function ActivityTimeline({ taskId, refreshKey = 0 }: Props) {
   }, [taskId, refreshKey]);
 
   return (
-    <div className="flex flex-col gap-3">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-        Activity
-      </span>
+    <div className="flex flex-col gap-2.5">
+      {showTitle && (
+        <h3 className="font-display text-base font-semibold text-foreground">
+          Activity
+        </h3>
+      )}
 
       {loading ? (
         <ActivityRowSkeleton count={3} />

@@ -6,9 +6,11 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
-import { Plus, Lock } from "lucide-react";
+import { Plus, Lock, CheckSquare } from "lucide-react";
 
 import type { ColumnRow, TaskRow } from "@/lib/tasks-api.types";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { TaskCard } from "./task-card";
 import { CreateTaskModal } from "./create-task-modal";
 
@@ -100,11 +102,22 @@ export function BoardColumn({
       </div>
 
       {/* Empty column hint */}
-      {tasks.length === 0 && (
-        <p className="py-4 text-center text-[12px] text-text-muted">
-          No tasks
-        </p>
-      )}
+      {tasks.length === 0 &&
+        (column.position === 0 && isPm ? (
+          <EmptyState
+            size="compact"
+            icon={CheckSquare}
+            title="Add your first task"
+            description="Create a task to get this board moving."
+            action={
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                Add task
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState size="minimal" icon={CheckSquare} title="No tasks" />
+        ))}
 
       {isPm && (
         <CreateTaskModal

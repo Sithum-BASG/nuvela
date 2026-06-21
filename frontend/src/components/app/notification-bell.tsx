@@ -6,6 +6,7 @@ import { Bell } from "lucide-react";
 import { NotificationItemRow } from "@/components/app/notification-item";
 import { Button } from "@/components/ui/button";
 import { NotificationDropdownSkeleton } from "@/components/ui/loading-states";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,9 +66,14 @@ export function NotificationBell() {
           {loading ? (
             <NotificationDropdownSkeleton />
           ) : recent.length === 0 ? (
-            <p className="px-3 py-8 text-center text-sm text-text-muted">
-              You&apos;re all caught up.
-            </p>
+            <div className="px-2 py-2">
+              <EmptyState
+                icon={Bell}
+                title="You're all caught up"
+                size="compact"
+                className="py-6"
+              />
+            </div>
           ) : (
             <div className="flex flex-col gap-1">
               {recent.map((row) => (

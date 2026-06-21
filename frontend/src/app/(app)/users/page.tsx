@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, MoreHorizontal } from "lucide-react";
+import { Search, MoreHorizontal, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/app/page-header";
@@ -29,6 +29,7 @@ import { initials, avatarColor } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import type { OrgUser, ProjectStub, UserStatus } from "@/lib/users-api.types";
 import { UsersTableSkeleton } from "@/components/ui/loading-states";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useSlowFetch } from "@/hooks/use-slow-fetch";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -246,17 +247,25 @@ export default function UsersPage() {
 
         {/* Empty */}
         {!loading && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
-            <p className="font-display text-[15px] font-semibold text-foreground">
-              {search || activeFilters.size > 0 ? "No matching users" : "No users yet"}
-            </p>
-            <p className="text-[13px] text-text-secondary">
-              {search || activeFilters.size > 0
-                ? "Try adjusting your search or filters."
-                : canManage
-                  ? "Add your first user to get started."
-                  : "Users will appear here once added."}
-            </p>
+          <div className="px-6 py-8">
+            <EmptyState
+              icon={Users}
+              title={search || activeFilters.size > 0 ? "No matching users" : "No users yet"}
+              description={
+                search || activeFilters.size > 0
+                  ? "Try adjusting your search or filters."
+                  : canManage
+                    ? "Create your first team member to get started."
+                    : "Users will appear here once added."
+              }
+              action={
+                canManage && !search && activeFilters.size === 0 ? (
+                  <Button onClick={() => setCreateOpen(true)}>Add user</Button>
+                ) : undefined
+              }
+              size="compact"
+              className="border-0 bg-transparent py-6"
+            />
           </div>
         )}
 

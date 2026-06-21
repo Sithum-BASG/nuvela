@@ -8,6 +8,7 @@ import {
   FileSpreadsheet,
   FileText,
   FileType,
+  Paperclip,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ import {
 } from "@/lib/attachments-api";
 import { cn } from "@/lib/utils";
 import { AttachmentRowSkeleton } from "@/components/ui/loading-states";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Props = {
   taskId: string;
@@ -91,14 +93,13 @@ export function AttachmentList({
 
   if (attachments.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-[10px] border border-dashed border-border bg-surface-muted/50 px-4 py-6 text-center">
-        <p className="text-[14px] font-medium text-foreground">
-          No attachments yet
-        </p>
-        <p className="text-[13px] text-text-muted">
-          Upload files to share with the project team.
-        </p>
-      </div>
+      <EmptyState
+        icon={Paperclip}
+        title="No files attached"
+        description="Upload files to share with the project team."
+        size="compact"
+        className="rounded-[10px] border border-dashed border-border bg-surface-muted/50"
+      />
     );
   }
 

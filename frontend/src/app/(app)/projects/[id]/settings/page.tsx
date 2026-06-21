@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RemoveMemberDialog } from "@/components/projects/remove-member-dialog";
 import { MemberListSkeleton, ProjectSettingsSkeleton } from "@/components/ui/loading-states";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useAuth } from "@/providers/auth-provider";
 import { projectsApi } from "@/lib/projects-api";
 import { ApiError } from "@/lib/api-client";
@@ -245,6 +246,7 @@ export default function ProjectSettingsPage({
   // but the backend may return everyone — filter client-side to be safe).
   const memberUserIds = new Set(members.map((m) => m.userId));
   const invitable = directory.filter((u) => !memberUserIds.has(u.id));
+  const orgHasOtherUsers = directory.some((u) => u.id !== me?.id);
 
   // Transfer targets: org members who are PM or Owner (exclude self)
   const transferCandidates = directory.filter(
@@ -423,9 +425,13 @@ export default function ProjectSettingsPage({
             {loadingMembers ? (
               <MemberListSkeleton />
             ) : members.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 rounded-[12px] border border-border bg-card px-6 py-8 text-center">
-                <p className="text-[13px] text-text-secondary">No members yet.</p>
-              </div>
+              <EmptyState
+                icon={UserPlus}
+                title="No collaborators invited yet"
+                description="Invite teammates from your organization to collaborate on this project."
+                size="compact"
+                className="rounded-[12px] border border-border bg-card py-8"
+              />
             ) : (
               <div className="flex flex-col gap-1 rounded-[12px] border border-border bg-card p-2">
                 {members.map((member) => (
@@ -495,11 +501,36 @@ export default function ProjectSettingsPage({
             </div>
 
             {invitable.length === 0 ? (
-              <div className="flex items-center justify-center rounded-[12px] border border-border bg-card px-6 py-8">
-                <p className="text-[13px] text-text-secondary">
-                  {addSearch ? "No matches found." : "Everyone in your org is already a member."}
-                </p>
-              </div>
+              addSearch ? (
+                <EmptyState
+                  icon={UserPlus}
+                  title="No matches found"
+                  description="Try a different name or email."
+                  size="compact"
+                  className="rounded-[12px] border border-border bg-card py-8"
+                />
+              ) : !orgHasOtherUsers ? (
+                <EmptyState
+                  icon={UserPlus}
+                  title="Add team members first"
+                  description="Users must exist in your organization before you can invite them to a project. Create teammates at Users, then return here."
+                  action={
+                    <Button variant="outline" size="sm" onClick={() => router.push("/users")}>
+                      Go to Users
+                    </Button>
+                  }
+                  size="compact"
+                  className="rounded-[12px] border border-border bg-card py-8"
+                />
+              ) : (
+                <EmptyState
+                  icon={UserPlus}
+                  title="Everyone is already a member"
+                  description="All users in your organization are on this project."
+                  size="compact"
+                  className="rounded-[12px] border border-border bg-card py-8"
+                />
+              )
             ) : (
               <div className="flex flex-col gap-1 rounded-[12px] border border-border bg-card p-2">
                 {invitable.map((user) => (

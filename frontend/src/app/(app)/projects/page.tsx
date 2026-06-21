@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { FolderKanban } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ProjectCard } from "@/components/projects/project-card";
 import { CreateProjectModal } from "@/components/projects/create-project-modal";
 import { useAuth } from "@/providers/auth-provider";
@@ -72,19 +74,20 @@ export default function ProjectsPage() {
 
       {/* Empty state */}
       {!loading && projects.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-[12px] border border-border bg-card px-6 py-16 text-center">
-          <p className="font-display text-[15px] font-semibold text-foreground">No projects yet</p>
-          <p className="max-w-sm text-[13px] text-text-secondary">
-            {canCreate
-              ? "Create your first project to get started."
-              : "Projects you're a member of will appear here."}
-          </p>
-          {canCreate && (
-            <Button className="mt-2" onClick={() => setCreateOpen(true)}>
-              New project
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          icon={FolderKanban}
+          title="No projects yet"
+          description={
+            canCreate
+              ? "Create your first project to get started. Add team members at Users before inviting them to a project."
+              : "Projects you're a member of will appear here."
+          }
+          action={
+            canCreate ? (
+              <Button onClick={() => setCreateOpen(true)}>New project</Button>
+            ) : undefined
+          }
+        />
       )}
 
       {/* Project rows */}

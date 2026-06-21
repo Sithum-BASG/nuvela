@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Plus, X, Check } from "lucide-react";
+import { Plus, X, Check, Tag } from "lucide-react";
 
 import { tasksApi } from "@/lib/tasks-api";
 import type { LabelRow } from "@/lib/tasks-api.types";
 import { cn } from "@/lib/utils";
 import { LabelListSkeleton } from "@/components/ui/loading-states";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Props = {
   projectId: string;
@@ -150,9 +151,12 @@ export function LabelManager({
             {loading ? (
               <LabelListSkeleton />
             ) : projectLabels.length === 0 && !creating ? (
-              <p className="py-2 text-center text-[12px] text-text-muted">
-                No labels yet
-              </p>
+              <EmptyState
+                icon={Tag}
+                title="No labels yet"
+                size="compact"
+                className="py-3"
+              />
             ) : (
               <div className="flex flex-col gap-0.5">
                 {projectLabels.map((label) => {

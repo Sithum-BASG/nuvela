@@ -2,10 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Bell } from "lucide-react";
 
 import { NotificationItemRow } from "@/components/app/notification-item";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { NotificationListSkeleton } from "@/components/ui/loading-states";
 import { notificationHref } from "@/lib/notification-utils";
 import type { NotificationRow } from "@/lib/notifications-api";
@@ -65,13 +67,15 @@ export default function NotificationsPage() {
       {loading ? (
         <NotificationListSkeleton />
       ) : visible.length === 0 ? (
-        <div className="rounded-[12px] border border-border bg-card px-6 py-12 text-center">
-          <p className="text-sm text-text-muted">
-            {filter === "unread"
-              ? "No unread notifications."
-              : "No notifications yet."}
-          </p>
-        </div>
+        <EmptyState
+          icon={Bell}
+          title={filter === "unread" ? "No unread notifications" : "You're all caught up"}
+          description={
+            filter === "unread"
+              ? "New activity will show up here when something needs your attention."
+              : "Notifications about tasks, mentions, and project changes will appear here."
+          }
+        />
       ) : (
         <div className="flex flex-col gap-1.5">
           {visible.map((row) => (

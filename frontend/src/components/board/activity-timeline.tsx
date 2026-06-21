@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { activityApi, type ActivityRow } from "@/lib/activity-api";
 import { cn } from "@/lib/utils";
 import { ActivityRowSkeleton } from "@/components/ui/loading-states";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Props = {
   taskId: string;
@@ -102,7 +103,13 @@ export function ActivityTimeline({ taskId, refreshKey = 0 }: Props) {
       {loading ? (
         <ActivityRowSkeleton count={3} />
       ) : rows.length === 0 ? (
-        <p className="text-[13px] text-text-muted">No activity yet.</p>
+        <EmptyState
+          icon={Pencil}
+          title="No activity yet"
+          description="Changes to this task will appear here."
+          size="compact"
+          className="py-2"
+        />
       ) : (
         <ol className="relative flex flex-col gap-0 pl-1">
           {rows.map((row, index) => {

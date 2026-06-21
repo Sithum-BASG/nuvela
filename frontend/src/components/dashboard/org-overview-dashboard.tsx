@@ -7,9 +7,9 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   DashboardSkeleton,
-  EmptyInboxState,
   MetricCard,
   QuickActionCard,
   SectionHeader,
@@ -82,24 +82,29 @@ export function OrgOverviewDashboard({ role }: { role: string }) {
 
   if (isOwner && data.projectCount === 0 && totalUsers <= 1) {
     return (
-      <div className="flex flex-col items-center gap-6">
-        <EmptyInboxState
-          title="Create your first project"
-          description="Start with a project, then invite your team and add the first task."
-          action={
+      <EmptyState
+        icon={FolderKanban}
+        title="Welcome to Nuvela"
+        description="Create your first project, then invite teammates so you can add them to projects."
+        action={
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <Link href="/projects" className={buttonVariants()}>
               Create project
             </Link>
-          }
-        />
-      </div>
+            <Link href="/users" className={buttonVariants({ variant: "outline" })}>
+              Invite teammate
+            </Link>
+          </div>
+        }
+      />
     );
   }
 
   if (!isOwner && totalUsers === 0) {
     return (
-      <EmptyInboxState
-        title="No team members yet"
+      <EmptyState
+        icon={Users}
+        title="Add your team"
         description="Invite collaborators and project managers to get your organization started."
         action={
           <Link href="/users" className={buttonVariants()}>
@@ -193,9 +198,13 @@ export function OrgOverviewDashboard({ role }: { role: string }) {
       <section className="flex flex-col gap-3">
         <SectionHeader title="Recent users" count={data.recentUsers.length} href="/users" />
         {data.recentUsers.length === 0 ? (
-          <div className="rounded-card border border-dashed border-border bg-card/40 px-6 py-10 text-center text-sm text-text-secondary">
-            No users yet.
-          </div>
+          <EmptyState
+            icon={Users}
+            title="No users yet"
+            description="Team members you invite will appear here."
+            size="compact"
+            className="rounded-card border border-dashed border-border bg-card/40 py-10"
+          />
         ) : (
           <div className="overflow-hidden rounded-card border border-border bg-card">
             <table className="w-full text-left text-sm">

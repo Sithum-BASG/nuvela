@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Users, ArchiveRestore } from "lucide-react";
+import { Users, ArchiveRestore, Archive } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useAuth } from "@/providers/auth-provider";
 import { projectsApi } from "@/lib/projects-api";
 import type { ProjectRow } from "@/lib/projects-api.types";
@@ -73,17 +74,16 @@ export default function ArchivedProjectsPage() {
 
       {/* Empty state */}
       {!loading && projects.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-[12px] border border-border bg-card px-6 py-16 text-center">
-          <p className="font-display text-[15px] font-semibold text-foreground">
-            No archived projects
-          </p>
-          <p className="max-w-sm text-[13px] text-text-secondary">
-            Projects you archive will appear here. They&apos;re kept as read-only records.
-          </p>
-          <Button variant="outline" className="mt-2" onClick={() => router.push("/projects")}>
-            Back to projects
-          </Button>
-        </div>
+        <EmptyState
+          icon={Archive}
+          title="No archived projects"
+          description="Projects you archive will appear here as read-only records."
+          action={
+            <Button variant="outline" onClick={() => router.push("/projects")}>
+              Back to projects
+            </Button>
+          }
+        />
       )}
 
       {/* Archived project rows */}

@@ -61,7 +61,7 @@ export function ProjectCard({ project, canManage, onArchive, onUnarchive }: Prop
 
       {/* Status badge */}
       {archived ? (
-        <span className="inline-flex h-[22px] shrink-0 items-center rounded-[6px] bg-[#eff0f3] px-2 text-[12px] leading-4 text-text-muted dark:bg-white/5">
+        <span className="inline-flex h-[22px] shrink-0 items-center rounded-[6px] bg-muted px-2 text-[12px] leading-4 text-text-muted dark:bg-white/5">
           Archived
         </span>
       ) : (

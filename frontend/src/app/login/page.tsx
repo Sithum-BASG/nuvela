@@ -13,7 +13,9 @@ import {
   AuthLayout,
 } from "@/components/auth/auth-shell";
 import { Field, FieldError } from "@/components/auth/field";
+import { ErrorCallout } from "@/components/ui/error-callout";
 import { Button } from "@/components/ui/button";
+import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { ApiError, authApi } from "@/lib/auth-api";
@@ -51,9 +53,9 @@ function LoginForm() {
       }
     } catch (err) {
       setFormError(
-        err instanceof ApiError && err.status === 401
-          ? "Incorrect email or password."
-          : "Something went wrong. Please try again."
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong. Please try again.",
       );
     }
   }
@@ -66,9 +68,7 @@ function LoginForm() {
       />
 
       {reason === "expired" && (
-        <p className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-text-secondary">
-          Your session expired. Please log in again.
-        </p>
+        <ErrorCallout variant="notice" className="w-full" />
       )}
 
       <form
@@ -115,7 +115,7 @@ function LoginForm() {
         {formError && <FieldError>{formError}</FieldError>}
 
         <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? "Logging in…" : "Log in"}
+          <ButtonPendingLabel pending={isSubmitting} label="Log in" pendingLabel="Logging in…" />
         </Button>
       </form>
 

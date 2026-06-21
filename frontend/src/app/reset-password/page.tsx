@@ -14,6 +14,7 @@ import {
 } from "@/components/auth/auth-shell";
 import { Field, FieldError } from "@/components/auth/field";
 import { Button } from "@/components/ui/button";
+import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { ApiError, authApi } from "@/lib/auth-api";
 import {
@@ -50,9 +51,9 @@ function ResetContent() {
       setDone(true);
     } catch (err) {
       setFormError(
-        err instanceof ApiError && err.status === 401
-          ? "This reset link is invalid or has expired."
-          : "Something went wrong. Please try again."
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong. Please try again.",
       );
     }
   }
@@ -120,7 +121,7 @@ function ResetContent() {
         {formError && <FieldError>{formError}</FieldError>}
 
         <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? "Updating…" : "Update password"}
+          <ButtonPendingLabel pending={isSubmitting} label="Update password" pendingLabel="Updating…" />
         </Button>
       </form>
 

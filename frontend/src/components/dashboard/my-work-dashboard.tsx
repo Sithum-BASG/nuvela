@@ -2,17 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { CheckSquare, FolderKanban } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorCallout } from "@/components/ui/error-callout";
 import {
   DashboardSkeleton,
-  EmptyInboxState,
   ProjectProgressBar,
   SectionHeader,
   TaskListRow,
 } from "@/components/dashboard/dashboard-shared";
 import { dashboardApi, type MyTaskRow, type ProjectProgressRow } from "@/lib/dashboard-api";
+import { useSlowFetch } from "@/hooks/use-slow-fetch";
+import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 
 function isDueSoon(task: MyTaskRow): boolean {
   if (!task.dueDate || task.isCompletedColumn) return false;
@@ -27,14 +30,17 @@ export function MyWorkDashboard() {
   const [tasks, setTasks] = useState<MyTaskRow[]>([]);
   const [projects, setProjects] = useState<ProjectProgressRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
 
   const load = useCallback(async () => {
+    setLoadError(null);
+    setLoading(true);
     try {
       const data = await dashboardApi.myWork();
       setTasks(data.tasks);
       setProjects(data.projects);
-    } catch {
-      toast.error("Failed to load dashboard.");
+    } catch (err) {
+      setLoadError(classifyLoadError(err));
     } finally {
       setLoading(false);
     }
@@ -47,15 +53,26 @@ export function MyWorkDashboard() {
   }, [load]);
 
   const dueSoon = useMemo(() => tasks.filter(isDueSoon), [tasks]);
+  const isSlow = useSlowFetch(loading);
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) return <DashboardSkeleton isSlow={isSlow} />;
+
+  if (loadError) {
+    return (
+      <ErrorCallout
+        variant={loadError}
+        onRetry={() => void load()}
+      />
+    );
+  }
 
   const hasNoTasks = tasks.length === 0;
   const hasNoProjects = projects.length === 0;
 
   if (hasNoTasks && hasNoProjects) {
     return (
-      <EmptyInboxState
+      <EmptyState
+        icon={CheckSquare}
         title="No tasks assigned to you yet"
         description="Projects you have joined are listed below while you wait for assigned work."
         action={
@@ -83,9 +100,12 @@ export function MyWorkDashboard() {
       <section className="flex flex-col gap-3">
         <SectionHeader title="My tasks" count={tasks.length} href="/projects" />
         {hasNoTasks ? (
-          <EmptyInboxState
+          <EmptyState
+            icon={CheckSquare}
             title="No tasks assigned to you yet"
             description="When a task is assigned to you, it will show up here."
+            size="compact"
+            className="rounded-card border border-dashed border-border bg-card/40"
           />
         ) : (
           <div className="flex flex-col gap-2">
@@ -103,9 +123,13 @@ export function MyWorkDashboard() {
           href="/projects"
         />
         {hasNoProjects ? (
-          <div className="rounded-card border border-dashed border-border bg-card/40 px-6 py-10 text-center text-sm text-text-secondary">
-            No active projects yet.
-          </div>
+          <EmptyState
+            icon={FolderKanban}
+            title="No active projects yet"
+            description="Join a project to track progress here."
+            size="compact"
+            className="rounded-card border border-dashed border-border bg-card/40"
+          />
         ) : (
           <div className="flex flex-col gap-4 rounded-card border border-border bg-card p-5">
             {projects.map((project) => (

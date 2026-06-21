@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { tasksApi } from "@/lib/tasks-api";
 import type { TaskRow } from "@/lib/tasks-api.types";
 import { cn } from "@/lib/utils";
+import { InlineSpinner } from "@/components/ui/inline-spinner";
 
 type Props = {
   task: TaskRow;
@@ -77,7 +78,7 @@ export function TaskCard({
       onClick={onClick}
       className={cn(
         "group relative flex cursor-grab flex-col gap-2 rounded-[8px] border border-border bg-card p-3 shadow-sm",
-        "transition-[opacity,shadow] duration-150",
+        "transition-[opacity,shadow] duration-150 motion-reduce:transition-none",
         "hover:shadow-md hover:border-border/70 active:cursor-grabbing",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         isGhost && "opacity-40",
@@ -163,10 +164,15 @@ export function TaskCard({
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={handleDelete}
-            className="flex size-5 items-center justify-center rounded-[4px] text-text-muted opacity-0 transition-opacity hover:bg-danger-tint hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger/50 group-hover:opacity-100"
+            disabled={deleting}
+            className="flex size-5 items-center justify-center rounded-[4px] text-text-muted opacity-0 transition-opacity hover:bg-danger-tint hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-danger/50 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label={`Delete ${task.title}`}
           >
-            <Trash2 className="size-[11px]" strokeWidth={2} />
+            {deleting ? (
+              <InlineSpinner className="size-[11px]" />
+            ) : (
+              <Trash2 className="size-[11px]" strokeWidth={2} />
+            )}
           </button>
         )}
       </div>

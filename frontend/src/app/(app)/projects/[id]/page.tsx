@@ -2,12 +2,15 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 import { projectsApi } from "@/lib/projects-api";
 import type { ProjectRow } from "@/lib/projects-api.types";
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { PageHeader } from "@/components/app/page-header";
+import { BoardPageSkeleton } from "@/components/ui/loading-states";
+import { ErrorCallout } from "@/components/ui/error-callout";
+import { useSlowFetch } from "@/hooks/use-slow-fetch";
+import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 
 export default function ProjectBoardPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,39 +18,33 @@ export default function ProjectBoardPage() {
   const initialTaskId = searchParams.get("task");
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
 
   useEffect(() => {
     void (async () => {
+      setLoadError(null);
+      setLoading(true);
       try {
         const p = await projectsApi.get(id);
         setProject(p);
-      } catch {
-        toast.error("Failed to load project.");
+      } catch (err) {
+        setLoadError(classifyLoadError(err));
       } finally {
         setLoading(false);
       }
     })();
   }, [id]);
 
+  const isSlow = useSlowFetch(loading);
+
   if (loading) {
+    return <BoardPageSkeleton isSlow={isSlow} />;
+  }
+
+  if (loadError) {
     return (
-      <div className="flex h-full flex-col">
-        <div className="px-6 pt-6 pb-4">
-          <div className="h-5 w-40 animate-pulse rounded bg-border" />
-        </div>
-        <div className="flex flex-1 gap-3 overflow-x-auto px-6 pb-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="flex w-[272px] shrink-0 flex-col gap-2 rounded-[12px] border border-border bg-card p-3"
-            >
-              <div className="h-4 w-24 animate-pulse rounded bg-border" />
-              {[1, 2, 3].map((j) => (
-                <div key={j} className="h-[76px] animate-pulse rounded-[8px] bg-border" />
-              ))}
-            </div>
-          ))}
-        </div>
+      <div className="p-6">
+        <ErrorCallout variant={loadError} onRetry={() => window.location.reload()} />
       </div>
     );
   }
@@ -56,7 +53,7 @@ export default function ProjectBoardPage() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="px-6 pt-6 pb-3">
+      <div className="px-4 pt-6 pb-3 sm:px-6">
         <PageHeader
           title={project.name}
           subtitle={project.description ?? undefined}

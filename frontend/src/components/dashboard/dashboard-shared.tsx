@@ -5,13 +5,14 @@ import {
   CheckSquare,
   ChevronRight,
   FolderKanban,
-  Inbox,
   Minus,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { SlowFetchNotice } from "@/components/ui/slow-fetch-notice";
+import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import type { MyTaskRow } from "@/lib/dashboard-api";
 
@@ -21,7 +22,7 @@ const PRIORITY_ICON = {
   HIGH: AlertCircle,
 } as const;
 
-export function DashboardSkeleton() {
+export function DashboardSkeleton({ isSlow }: { isSlow?: boolean }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -38,6 +39,7 @@ export function DashboardSkeleton() {
           <Skeleton key={i} className="h-16 w-full rounded-[10px]" />
         ))}
       </div>
+      {isSlow ? <SlowFetchNotice /> : null}
     </div>
   );
 }
@@ -212,6 +214,7 @@ export function QuickActionCard({
   );
 }
 
+/** Back-compat wrapper — prefer `EmptyState` directly. */
 export function EmptyInboxState({
   title,
   description,
@@ -222,15 +225,11 @@ export function EmptyInboxState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 rounded-card border border-border bg-card px-8 py-12 text-center">
-      <span className="flex size-14 items-center justify-center rounded-[28px] bg-accent-tint text-primary">
-        <Inbox className="size-[26px]" strokeWidth={1.75} aria-hidden />
-      </span>
-      <div className="flex max-w-sm flex-col gap-1.5">
-        <p className="font-display text-lg font-semibold text-foreground">{title}</p>
-        <p className="text-sm leading-5 text-text-secondary">{description}</p>
-      </div>
-      {action}
-    </div>
+    <EmptyState
+      icon={FolderKanban}
+      title={title}
+      description={description}
+      action={action}
+    />
   );
 }

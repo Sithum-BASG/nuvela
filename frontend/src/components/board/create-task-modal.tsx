@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -156,7 +157,7 @@ export function CreateTaskModal({ open, projectId, onClose, onCreated }: Props) 
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? "Creating…" : "Create task"}
+              <ButtonPendingLabel pending={submitting} label="Create task" pendingLabel="Creating…" />
             </Button>
           </DialogFooter>
         </form>

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { searchApi, type SearchResult } from "@/lib/search-api";
 import { cn } from "@/lib/utils";
@@ -117,25 +118,22 @@ function SearchContent({ initialQuery }: { initialQuery: string }) {
       )}
 
       {!debouncedQ && !loading && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-card border border-dashed border-border bg-card/40 px-6 py-16 text-center">
-          <p className="font-display text-base font-semibold text-foreground">
-            Search your tasks
-          </p>
-          <p className="max-w-sm text-sm text-text-secondary">
-            Enter a task title or description. Results are limited to projects you can access.
-          </p>
-        </div>
+        <EmptyState
+          icon={Search}
+          title="Search your tasks"
+          description="Enter a task title or description. Results are limited to projects you can access."
+          className="border border-dashed border-border bg-card/40"
+        />
       )}
 
       {loading && <SearchSkeleton />}
 
       {!loading && debouncedQ && results.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-card border border-border bg-card px-6 py-14 text-center">
-          <p className="font-display text-base font-semibold text-foreground">No results</p>
-          <p className="max-w-sm text-sm text-text-secondary">
-            No tasks matched “{debouncedQ}” in your accessible projects.
-          </p>
-        </div>
+        <EmptyState
+          icon={Search}
+          title="No tasks match your search"
+          description={`No tasks matched “${debouncedQ}” in your accessible projects. Try a broader term.`}
+        />
       )}
 
       {!loading && results.length > 0 && (

@@ -1,6 +1,9 @@
 // Typed client for the NestJS /auth/* endpoints. All requests send the
 // HTTP-only auth cookies (credentials: "include"). On a 401 it attempts one
 // silent /auth/refresh and retries once, per the App Flow's silent-refresh rule.
+import { getFriendlyErrorMessage } from "@/lib/error-messages";
+import { redirectSessionExpired } from "@/lib/session-expired";
+
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
 
 export type SessionUser = {
@@ -46,6 +49,18 @@ async function rawFetch(
 // Endpoints where a 401 must NOT trigger a refresh+retry (the 401 is meaningful).
 const NO_REFRESH = new Set(["/auth/login", "/auth/refresh", "/auth/me"]);
 
+function throwAuthError(
+  res: Response,
+  data: { code?: string; message?: string },
+): never {
+  const code = data.code ?? "ERROR";
+  throw new ApiError(
+    res.status,
+    code,
+    getFriendlyErrorMessage(code, data.message ?? res.statusText),
+  );
+}
+
 async function request<T>(
   path: string,
   method: "GET" | "POST",
@@ -57,7 +72,14 @@ async function request<T>(
     const refreshed = await rawFetch("/auth/refresh", "POST");
     if (refreshed.ok) {
       res = await rawFetch(path, method, body);
+    } else {
+      redirectSessionExpired();
+      throwAuthError(refreshed, { code: "INVALID_REFRESH", message: "Session expired" });
     }
+  }
+
+  if (res.status === 401 && !NO_REFRESH.has(path)) {
+    redirectSessionExpired();
   }
 
   if (!res.ok) {
@@ -65,11 +87,7 @@ async function request<T>(
       code?: string;
       message?: string;
     };
-    throw new ApiError(
-      res.status,
-      data.code ?? "ERROR",
-      data.message ?? res.statusText,
-    );
+    throwAuthError(res, data);
   }
 
   if (res.status === 204) {

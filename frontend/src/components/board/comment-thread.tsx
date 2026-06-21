@@ -9,6 +9,8 @@ import { commentsApi, type CommentRow } from "@/lib/comments-api";
 import { avatarColor, initials } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import { MentionInput } from "./mention-input";
+import { TaskRowSkeleton } from "@/components/ui/loading-states";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Me = { id: string; name: string };
 
@@ -127,26 +129,15 @@ export function CommentThread({ taskId, projectId, me, canModerate }: Props) {
       </span>
 
       {loading ? (
-        <div className="flex flex-col gap-3">
-          {[1, 2].map((i) => (
-            <div
-              key={i}
-              className="h-16 animate-pulse rounded-[10px] bg-border motion-reduce:animate-none"
-            />
-          ))}
-        </div>
+        <TaskRowSkeleton count={2} />
       ) : comments.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-[10px] border border-dashed border-border bg-surface-muted/50 px-4 py-8 text-center">
-          <span className="flex size-10 items-center justify-center rounded-full bg-accent-tint text-accent-strong">
-            <MessageSquare className="size-5" strokeWidth={1.75} />
-          </span>
-          <p className="text-[14px] font-medium text-foreground">
-            No comments yet
-          </p>
-          <p className="max-w-[240px] text-[13px] text-text-muted">
-            Start the conversation or mention a project member.
-          </p>
-        </div>
+        <EmptyState
+          icon={MessageSquare}
+          title="No comments yet"
+          description="Start the conversation or mention a project member."
+          size="compact"
+          className="rounded-[10px] border border-dashed border-border bg-surface-muted/50"
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {comments.map((comment) => {

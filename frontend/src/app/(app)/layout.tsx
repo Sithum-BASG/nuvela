@@ -17,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <LogoSymbol className="size-12 animate-pulse" />
+        <LogoSymbol className="size-12 motion-safe:animate-pulse motion-reduce:animate-none" />
       </div>
     );
   }

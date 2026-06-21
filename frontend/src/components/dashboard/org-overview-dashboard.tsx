@@ -4,18 +4,20 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Building2, FolderKanban, UserPlus, Users } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
 
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorCallout } from "@/components/ui/error-callout";
 import {
   DashboardSkeleton,
-  EmptyInboxState,
   MetricCard,
   QuickActionCard,
   SectionHeader,
 } from "@/components/dashboard/dashboard-shared";
 import { avatarColor, initials } from "@/lib/avatar";
 import { dashboardApi, type OrgOverview } from "@/lib/dashboard-api";
+import { useSlowFetch } from "@/hooks/use-slow-fetch";
+import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 import { cn } from "@/lib/utils";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -50,14 +52,17 @@ function StatusBadge({ status }: { status: string }) {
 export function OrgOverviewDashboard({ role }: { role: string }) {
   const [data, setData] = useState<OrgOverview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
   const isOwner = role === "OWNER";
 
   const load = useCallback(async () => {
+    setLoadError(null);
+    setLoading(true);
     try {
       const overview = await dashboardApi.orgOverview();
       setData(overview);
-    } catch {
-      toast.error("Failed to load dashboard.");
+    } catch (err) {
+      setLoadError(classifyLoadError(err));
     } finally {
       setLoading(false);
     }
@@ -69,7 +74,20 @@ export function OrgOverviewDashboard({ role }: { role: string }) {
     })();
   }, [load]);
 
-  if (loading || !data) return <DashboardSkeleton />;
+  const isSlow = useSlowFetch(loading);
+
+  if (loading) return <DashboardSkeleton isSlow={isSlow} />;
+
+  if (loadError) {
+    return (
+      <ErrorCallout
+        variant={loadError}
+        onRetry={() => void load()}
+      />
+    );
+  }
+
+  if (!data) return null;
 
   const totalUsers =
     data.userCounts.OWNER +
@@ -79,24 +97,29 @@ export function OrgOverviewDashboard({ role }: { role: string }) {
 
   if (isOwner && data.projectCount === 0 && totalUsers <= 1) {
     return (
-      <div className="flex flex-col items-center gap-6">
-        <EmptyInboxState
-          title="Create your first project"
-          description="Start with a project, then invite your team and add the first task."
-          action={
+      <EmptyState
+        icon={FolderKanban}
+        title="Welcome to Nuvela"
+        description="Create your first project, then invite teammates so you can add them to projects."
+        action={
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <Link href="/projects" className={buttonVariants()}>
               Create project
             </Link>
-          }
-        />
-      </div>
+            <Link href="/users" className={buttonVariants({ variant: "outline" })}>
+              Invite teammate
+            </Link>
+          </div>
+        }
+      />
     );
   }
 
   if (!isOwner && totalUsers === 0) {
     return (
-      <EmptyInboxState
-        title="No team members yet"
+      <EmptyState
+        icon={Users}
+        title="Add your team"
         description="Invite collaborators and project managers to get your organization started."
         action={
           <Link href="/users" className={buttonVariants()}>
@@ -190,9 +213,13 @@ export function OrgOverviewDashboard({ role }: { role: string }) {
       <section className="flex flex-col gap-3">
         <SectionHeader title="Recent users" count={data.recentUsers.length} href="/users" />
         {data.recentUsers.length === 0 ? (
-          <div className="rounded-card border border-dashed border-border bg-card/40 px-6 py-10 text-center text-sm text-text-secondary">
-            No users yet.
-          </div>
+          <EmptyState
+            icon={Users}
+            title="No users yet"
+            description="Team members you invite will appear here."
+            size="compact"
+            className="rounded-card border border-dashed border-border bg-card/40 py-10"
+          />
         ) : (
           <div className="overflow-hidden rounded-card border border-border bg-card">
             <table className="w-full text-left text-sm">

@@ -5,6 +5,8 @@ import { Bell } from "lucide-react";
 
 import { NotificationItemRow } from "@/components/app/notification-item";
 import { Button } from "@/components/ui/button";
+import { NotificationDropdownSkeleton } from "@/components/ui/loading-states";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 export function NotificationBell() {
   const router = useRouter();
-  const { items, unreadCount, markRead, markAllRead } = useNotifications();
+  const { items, unreadCount, loading, markRead, markAllRead } = useNotifications();
   const recent = items.slice(0, 8);
   const badge =
     unreadCount > 9 ? "9+" : unreadCount > 0 ? String(unreadCount) : null;
@@ -31,7 +33,7 @@ export function NotificationBell() {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "relative inline-flex size-9 items-center justify-center rounded-control text-foreground outline-none",
+          "relative inline-flex size-11 items-center justify-center rounded-control text-foreground outline-none",
           "hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/50",
         )}
         aria-label="Notifications"
@@ -61,10 +63,17 @@ export function NotificationBell() {
           )}
         </div>
         <div className="max-h-[280px] overflow-y-auto p-2">
-          {recent.length === 0 ? (
-            <p className="px-3 py-8 text-center text-sm text-text-muted">
-              You&apos;re all caught up.
-            </p>
+          {loading ? (
+            <NotificationDropdownSkeleton />
+          ) : recent.length === 0 ? (
+            <div className="px-2 py-2">
+              <EmptyState
+                icon={Bell}
+                title="You're all caught up"
+                size="compact"
+                className="py-6"
+              />
+            </div>
           ) : (
             <div className="flex flex-col gap-1">
               {recent.map((row) => (

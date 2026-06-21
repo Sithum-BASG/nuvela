@@ -1,31 +1,40 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { FolderKanban } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ProjectCard } from "@/components/projects/project-card";
 import { CreateProjectModal } from "@/components/projects/create-project-modal";
 import { useAuth } from "@/providers/auth-provider";
 import { projectsApi } from "@/lib/projects-api";
 import type { ProjectRow } from "@/lib/projects-api.types";
+import { ProjectsListSkeleton } from "@/components/ui/loading-states";
+import { ErrorCallout } from "@/components/ui/error-callout";
+import { useSlowFetch } from "@/hooks/use-slow-fetch";
+import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 
 export default function ProjectsPage() {
   const { user: me } = useAuth();
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
   // PM and Owner create projects; Admin sees an empty list (API returns []).
   const canCreate = me?.role === "PROJECT_MANAGER" || me?.role === "OWNER";
 
   const load = useCallback(async () => {
+    setLoadError(null);
+    setLoading(true);
     try {
       const data = await projectsApi.list();
       setProjects(data);
-    } catch {
-      toast.error("Failed to load projects.");
+    } catch (err) {
+      setLoadError(classifyLoadError(err));
     } finally {
       setLoading(false);
     }
@@ -52,6 +61,8 @@ export default function ProjectsPage() {
     return me?.role === "OWNER" || (me?.role === "PROJECT_MANAGER" && project.managerId === me.id);
   }
 
+  const isSlow = useSlowFetch(loading);
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 p-8">
       <PageHeader
@@ -64,44 +75,31 @@ export default function ProjectsPage() {
         }
       />
 
-      {/* Loading skeleton */}
-      {loading && (
-        <div className="flex flex-col gap-[10px] rounded-[12px] border border-border bg-card p-[10px]">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="flex h-[68px] items-center gap-[14px] rounded-[12px] border border-border px-4 py-3"
-            >
-              <div className="h-[38px] w-[10px] shrink-0 animate-pulse rounded-[3px] bg-border" />
-              <div className="flex flex-1 flex-col gap-1.5">
-                <div className="h-3 w-40 animate-pulse rounded bg-border" />
-                <div className="h-2.5 w-56 animate-pulse rounded bg-border" />
-              </div>
-              <div className="h-[22px] w-14 animate-pulse rounded-[6px] bg-border" />
-            </div>
-          ))}
-        </div>
+      {loading && <ProjectsListSkeleton isSlow={isSlow} />}
+
+      {!loading && loadError && (
+        <ErrorCallout variant={loadError} onRetry={() => void load()} />
       )}
 
-      {/* Empty state */}
-      {!loading && projects.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-[12px] border border-border bg-card px-6 py-16 text-center">
-          <p className="font-display text-[15px] font-semibold text-foreground">No projects yet</p>
-          <p className="max-w-sm text-[13px] text-text-secondary">
-            {canCreate
-              ? "Create your first project to get started."
-              : "Projects you're a member of will appear here."}
-          </p>
-          {canCreate && (
-            <Button className="mt-2" onClick={() => setCreateOpen(true)}>
-              New project
-            </Button>
-          )}
-        </div>
+      {!loading && !loadError && projects.length === 0 && (
+        <EmptyState
+          icon={FolderKanban}
+          title="No projects yet"
+          description={
+            canCreate
+              ? "Create your first project to get started. Add team members at Users before inviting them to a project."
+              : "Projects you're a member of will appear here."
+          }
+          action={
+            canCreate ? (
+              <Button onClick={() => setCreateOpen(true)}>New project</Button>
+            ) : undefined
+          }
+        />
       )}
 
       {/* Project rows */}
-      {!loading && projects.length > 0 && (
+      {!loading && !loadError && projects.length > 0 && (
         <div className="flex flex-col gap-[10px] rounded-[12px] border border-border bg-card p-[10px]">
           {projects.map((project) => (
             <ProjectCard

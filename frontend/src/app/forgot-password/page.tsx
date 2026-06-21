@@ -13,6 +13,7 @@ import {
 } from "@/components/auth/auth-shell";
 import { Field } from "@/components/auth/field";
 import { Button } from "@/components/ui/button";
+import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
 import { Input } from "@/components/ui/input";
 import { authApi } from "@/lib/auth-api";
 import {
@@ -85,7 +86,7 @@ export default function ForgotPasswordPage() {
           </Field>
 
           <Button type="submit" disabled={isSubmitting} className="w-full">
-            {isSubmitting ? "Sending…" : "Send reset link"}
+            <ButtonPendingLabel pending={isSubmitting} label="Send reset link" pendingLabel="Sending…" />
           </Button>
         </form>
 

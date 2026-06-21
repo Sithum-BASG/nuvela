@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, MoreHorizontal } from "lucide-react";
+import { Search, MoreHorizontal, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/app/page-header";
@@ -28,6 +28,11 @@ import { ApiError } from "@/lib/api-client";
 import { initials, avatarColor } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import type { OrgUser, ProjectStub, UserStatus } from "@/lib/users-api.types";
+import { UsersTableSkeleton } from "@/components/ui/loading-states";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorCallout } from "@/components/ui/error-callout";
+import { useSlowFetch } from "@/hooks/use-slow-fetch";
+import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 
 const ROLE_LABEL: Record<string, string> = {
   OWNER: "Owner",
@@ -48,6 +53,7 @@ export default function UsersPage() {
   const { user: me } = useAuth();
   const [users, setUsers] = useState<OrgUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<Set<StatusFilter>>(new Set());
 
@@ -61,11 +67,13 @@ export default function UsersPage() {
   const canManage = me?.role === "OWNER" || me?.role === "ADMIN";
 
   const load = useCallback(async () => {
+    setLoadError(null);
+    setLoading(true);
     try {
       const data = await listUsers();
       setUsers(data);
-    } catch {
-      toast.error("Failed to load users.");
+    } catch (err) {
+      setLoadError(classifyLoadError(err));
     } finally {
       setLoading(false);
     }
@@ -149,8 +157,10 @@ export default function UsersPage() {
       u.id !== deactivateTarget?.id,
   );
 
+  const isSlow = useSlowFetch(loading);
+
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-4 sm:gap-5 sm:p-8">
       <PageHeader
         title="Users"
         subtitle="Manage who has access to your organization"
@@ -162,9 +172,9 @@ export default function UsersPage() {
       />
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         {/* Search */}
-        <div className="relative w-[360px]">
+        <div className="relative w-full lg:w-[360px]">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-muted"
             aria-hidden
@@ -179,7 +189,7 @@ export default function UsersPage() {
         </div>
 
         {/* Status filter chips */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-[13px] font-medium text-text-muted">Filter</span>
           {STATUS_FILTERS.map((f) => {
             const active = activeFilters.has(f.value);
@@ -191,7 +201,7 @@ export default function UsersPage() {
                 className={cn(
                   "flex h-[30px] items-center gap-2 rounded-[8px] border px-[11px] text-[13px] transition-colors",
                   active
-                    ? "border-[#d9d5f5] bg-[#edebfb] font-medium text-accent-strong"
+                    ? "border-accent-tint bg-accent-tint font-medium text-accent-strong"
                     : "border-border bg-card font-normal text-text-secondary hover:border-border/80",
                 )}
               >
@@ -219,7 +229,7 @@ export default function UsersPage() {
       {/* Table */}
       <div className="overflow-hidden rounded-[12px] border border-border bg-card">
         {/* Header row */}
-        <div className="flex h-[38px] items-center border-b border-border bg-[#fbfbfc] px-5">
+        <div className="hidden h-[38px] items-center border-b border-border bg-muted px-5 md:flex">
           <div className="flex flex-1 items-center">
             <span className="text-[12px] font-medium tracking-[0.48px] text-text-muted uppercase">
               User
@@ -238,48 +248,40 @@ export default function UsersPage() {
           <div className="w-[90px]" />
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex flex-col">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex h-[64px] items-center border-b border-border px-5">
-                <div className="flex flex-1 items-center gap-3">
-                  <div className="size-9 animate-pulse rounded-full bg-border" />
-                  <div className="flex flex-col gap-1.5">
-                    <div className="h-3 w-28 animate-pulse rounded bg-border" />
-                    <div className="h-2.5 w-20 animate-pulse rounded bg-border" />
-                  </div>
-                </div>
-                <div className="w-[140px]">
-                  <div className="h-3 w-20 animate-pulse rounded bg-border" />
-                </div>
-                <div className="w-[130px]">
-                  <div className="h-[22px] w-14 animate-pulse rounded-[6px] bg-border" />
-                </div>
-                <div className="w-[90px]" />
-              </div>
-            ))}
+        {loading && <UsersTableSkeleton isSlow={isSlow} />}
+
+        {!loading && loadError && (
+          <div className="px-5 py-6">
+            <ErrorCallout variant={loadError} onRetry={() => void load()} />
           </div>
         )}
 
-        {/* Empty */}
-        {!loading && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
-            <p className="font-display text-[15px] font-semibold text-foreground">
-              {search || activeFilters.size > 0 ? "No matching users" : "No users yet"}
-            </p>
-            <p className="text-[13px] text-text-secondary">
-              {search || activeFilters.size > 0
-                ? "Try adjusting your search or filters."
-                : canManage
-                  ? "Add your first user to get started."
-                  : "Users will appear here once added."}
-            </p>
+        {!loading && !loadError && filtered.length === 0 && (
+          <div className="px-6 py-8">
+            <EmptyState
+              icon={Users}
+              title={search || activeFilters.size > 0 ? "No matching users" : "No users yet"}
+              description={
+                search || activeFilters.size > 0
+                  ? "Try adjusting your search or filters."
+                  : canManage
+                    ? "Create your first team member to get started."
+                    : "Users will appear here once added."
+              }
+              action={
+                canManage && !search && activeFilters.size === 0 ? (
+                  <Button onClick={() => setCreateOpen(true)}>Add user</Button>
+                ) : undefined
+              }
+              size="compact"
+              className="border-0 bg-transparent py-6"
+            />
           </div>
         )}
 
         {/* Data rows */}
         {!loading &&
+          !loadError &&
           filtered.map((u) => {
             const isDeactivated = u.status === "DEACTIVATED";
             const isPending = u.status === "PENDING";
@@ -288,7 +290,10 @@ export default function UsersPage() {
             return (
               <div
                 key={u.id}
-                className="flex h-[64px] items-center border-b border-border bg-white px-5 py-[14px] last:border-b-0"
+                className={cn(
+                  "flex flex-col gap-3 border-b border-border bg-card p-4 last:border-b-0",
+                  "md:h-[64px] md:flex-row md:items-center md:px-5 md:py-[14px]",
+                )}
               >
                 {/* User cell */}
                 <div className="flex flex-1 items-center gap-3">
@@ -310,8 +315,9 @@ export default function UsersPage() {
                   </div>
                 </div>
 
-                {/* Role cell */}
-                <div className="w-[140px]">
+                <div className="flex items-center justify-between gap-3 md:contents">
+                  {/* Role cell */}
+                  <div className="md:w-[140px]">
                   <span
                     className={cn(
                       "text-[14px]",
@@ -320,15 +326,15 @@ export default function UsersPage() {
                   >
                     {ROLE_LABEL[u.role] ?? u.role}
                   </span>
-                </div>
+                  </div>
 
-                {/* Status cell */}
-                <div className="w-[130px]">
+                  {/* Status cell */}
+                  <div className="md:w-[130px]">
                   <StatusBadge status={u.status} />
-                </div>
+                  </div>
 
-                {/* Actions cell */}
-                <div className="flex w-[90px] items-center justify-end gap-[10px]">
+                  {/* Actions cell */}
+                  <div className="flex min-h-11 items-center justify-end gap-[10px] md:w-[90px]">
                   {isPending && canManage && (
                     <button
                       type="button"
@@ -341,7 +347,7 @@ export default function UsersPage() {
                   {canManage && !isSelf && u.role !== "OWNER" && (
                     <DropdownMenu>
                       <DropdownMenuTrigger
-                        className="flex size-7 items-center justify-center rounded-[6px] text-text-muted outline-none transition-colors hover:bg-[#f0f1f3] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+                        className="flex size-11 items-center justify-center rounded-[6px] text-text-muted outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none md:size-7"
                         aria-label={`Actions for ${u.name}`}
                       >
                         <MoreHorizontal className="size-[18px]" strokeWidth={1.75} />
@@ -366,6 +372,7 @@ export default function UsersPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
+                  </div>
                 </div>
               </div>
             );
@@ -415,7 +422,7 @@ function StatusBadge({ status }: { status: string }) {
     );
   }
   return (
-    <span className="inline-flex h-[22px] items-center rounded-[6px] bg-[#eff0f3] px-2 text-[12px] font-medium leading-4 text-text-muted">
+    <span className="inline-flex h-[22px] items-center rounded-[6px] bg-muted px-2 text-[12px] font-medium leading-4 text-text-muted">
       Deactivated
     </span>
   );

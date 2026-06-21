@@ -2,11 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Bell } from "lucide-react";
 
 import { NotificationItemRow } from "@/components/app/notification-item";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { NotificationListSkeleton } from "@/components/ui/loading-states";
 import { notificationHref } from "@/lib/notification-utils";
 import type { NotificationRow } from "@/lib/notifications-api";
 import { useNotifications } from "@/providers/socket-provider";
@@ -63,19 +65,17 @@ export default function NotificationsPage() {
       </div>
 
       {loading ? (
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-[59px] w-full rounded-[10px]" />
-          ))}
-        </div>
+        <NotificationListSkeleton />
       ) : visible.length === 0 ? (
-        <div className="rounded-[12px] border border-border bg-card px-6 py-12 text-center">
-          <p className="text-sm text-text-muted">
-            {filter === "unread"
-              ? "No unread notifications."
-              : "No notifications yet."}
-          </p>
-        </div>
+        <EmptyState
+          icon={Bell}
+          title={filter === "unread" ? "No unread notifications" : "You're all caught up"}
+          description={
+            filter === "unread"
+              ? "New activity will show up here when something needs your attention."
+              : "Notifications about tasks, mentions, and project changes will appear here."
+          }
+        />
       ) : (
         <div className="flex flex-col gap-1.5">
           {visible.map((row) => (

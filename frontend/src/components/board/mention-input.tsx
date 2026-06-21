@@ -10,6 +10,8 @@ import {
 } from "react";
 import { Send } from "lucide-react";
 
+import { InlineSpinner } from "@/components/ui/inline-spinner";
+
 import { projectsApi } from "@/lib/projects-api";
 import type { MemberRow } from "@/lib/projects-api.types";
 import { avatarColor, initials } from "@/lib/avatar";
@@ -266,7 +268,11 @@ export function MentionInput({
             )}
             aria-label="Send comment"
           >
-            <Send className="size-4" strokeWidth={2} />
+            {sending ? (
+              <InlineSpinner className="size-4 text-primary-foreground" />
+            ) : (
+              <Send className="size-4" strokeWidth={2} />
+            )}
           </button>
         </div>
       </div>

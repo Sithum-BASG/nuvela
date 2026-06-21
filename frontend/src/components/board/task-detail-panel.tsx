@@ -21,6 +21,7 @@ import { LabelManager } from "./label-manager";
 import { CommentThread } from "./comment-thread";
 import { AttachmentSection } from "./attachment-section";
 import { ActivityTimeline } from "./activity-timeline";
+import { ChecklistSkeleton } from "@/components/ui/loading-states";
 
 type Props = {
   task: TaskRow | null;
@@ -188,7 +189,7 @@ export function TaskDetailPanel({
       {/* Backdrop */}
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] transition-opacity duration-200",
+          "fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] transition-opacity duration-200 motion-reduce:transition-none",
           open ? "opacity-100" : "pointer-events-none opacity-0",
         )}
         onClick={onClose}
@@ -202,7 +203,8 @@ export function TaskDetailPanel({
         aria-label="Task details"
         className={cn(
           "fixed inset-y-0 right-0 z-50 flex w-full max-w-[420px] flex-col bg-card shadow-2xl",
-          "transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
+          "max-md:inset-0 max-md:max-w-none",
+          "transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
           open ? "translate-x-0" : "translate-x-full",
         )}
       >
@@ -346,14 +348,7 @@ export function TaskDetailPanel({
                 )}
 
                 {loadingChecklist ? (
-                  <div className="flex flex-col gap-1.5">
-                    {[1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="h-8 animate-pulse rounded-[6px] bg-border"
-                      />
-                    ))}
-                  </div>
+                  <ChecklistSkeleton count={2} />
                 ) : (
                   <div className="flex flex-col gap-1">
                     {checklist.map((item) => (

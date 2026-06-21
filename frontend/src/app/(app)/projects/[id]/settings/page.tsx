@@ -6,9 +6,11 @@ import { ArrowLeft, UserMinus, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RemoveMemberDialog } from "@/components/projects/remove-member-dialog";
+import { MemberListSkeleton, ProjectSettingsSkeleton } from "@/components/ui/loading-states";
 import { useAuth } from "@/providers/auth-provider";
 import { projectsApi } from "@/lib/projects-api";
 import { ApiError } from "@/lib/api-client";
@@ -232,20 +234,7 @@ export default function ProjectSettingsPage({
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loadingProject) {
-    return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 p-8">
-        <div className="flex items-center gap-2">
-          <div className="h-4 w-4 animate-pulse rounded bg-border" />
-          <div className="h-4 w-20 animate-pulse rounded bg-border" />
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="h-7 w-7 animate-pulse rounded-[8px] bg-border" />
-          <div className="h-7 w-48 animate-pulse rounded bg-border" />
-        </div>
-        <div className="h-px w-full bg-border" />
-        <div className="h-64 animate-pulse rounded-[12px] border border-border bg-card" />
-      </div>
-    );
+    return <ProjectSettingsSkeleton />;
   }
 
   if (!project) return null;
@@ -407,7 +396,7 @@ export default function ProjectSettingsPage({
           {!archived && (
             <div className="flex justify-end pt-2">
               <Button type="submit" disabled={saving}>
-                {saving ? "Saving…" : "Save changes"}
+                <ButtonPendingLabel pending={saving} label="Save changes" pendingLabel="Saving…" />
               </Button>
             </div>
           )}
@@ -432,20 +421,7 @@ export default function ProjectSettingsPage({
             </h2>
 
             {loadingMembers ? (
-              <div className="flex flex-col gap-1 rounded-[12px] border border-border bg-card p-2">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="flex h-[60px] items-center gap-3 rounded-[10px] border border-border px-[14px]"
-                  >
-                    <div className="size-[34px] animate-pulse rounded-full bg-border" />
-                    <div className="flex flex-1 flex-col gap-1.5">
-                      <div className="h-3 w-32 animate-pulse rounded bg-border" />
-                      <div className="h-2.5 w-44 animate-pulse rounded bg-border" />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <MemberListSkeleton />
             ) : members.length === 0 ? (
               <div className="flex flex-col items-center gap-2 rounded-[12px] border border-border bg-card px-6 py-8 text-center">
                 <p className="text-[13px] text-text-secondary">No members yet.</p>
@@ -556,7 +532,11 @@ export default function ProjectSettingsPage({
                       onClick={() => handleAddMember(user.id)}
                     >
                       <UserPlus className="size-[14px]" strokeWidth={1.75} aria-hidden />
-                      {addingMemberId === user.id ? "Adding…" : "Invite"}
+                      <ButtonPendingLabel
+                        pending={addingMemberId === user.id}
+                        label="Invite"
+                        pendingLabel="Adding…"
+                      />
                     </Button>
                   </div>
                 ))}
@@ -656,7 +636,11 @@ export default function ProjectSettingsPage({
                   disabled={!transferTo || transferring}
                   className="shrink-0"
                 >
-                  {transferring ? "Transferring…" : "Transfer"}
+                  <ButtonPendingLabel
+                    pending={transferring}
+                    label="Transfer"
+                    pendingLabel="Transferring…"
+                  />
                 </Button>
               </form>
             </section>

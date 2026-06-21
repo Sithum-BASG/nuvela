@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -167,7 +168,7 @@ export function CreateProjectModal({ open, onClose, onCreated }: Props) {
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Creating…" : "Create project"}
+              <ButtonPendingLabel pending={loading} label="Create project" pendingLabel="Creating…" />
             </Button>
           </div>
         </form>

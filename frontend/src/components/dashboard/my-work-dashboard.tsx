@@ -13,6 +13,7 @@ import {
   TaskListRow,
 } from "@/components/dashboard/dashboard-shared";
 import { dashboardApi, type MyTaskRow, type ProjectProgressRow } from "@/lib/dashboard-api";
+import { useSlowFetch } from "@/hooks/use-slow-fetch";
 
 function isDueSoon(task: MyTaskRow): boolean {
   if (!task.dueDate || task.isCompletedColumn) return false;
@@ -47,8 +48,9 @@ export function MyWorkDashboard() {
   }, [load]);
 
   const dueSoon = useMemo(() => tasks.filter(isDueSoon), [tasks]);
+  const isSlow = useSlowFetch(loading);
 
-  if (loading) return <DashboardSkeleton />;
+  if (loading) return <DashboardSkeleton isSlow={isSlow} />;
 
   const hasNoTasks = tasks.length === 0;
   const hasNoProjects = projects.length === 0;

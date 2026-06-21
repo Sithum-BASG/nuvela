@@ -5,6 +5,8 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
+import { RemoveMemberCheckSkeleton } from "@/components/ui/loading-states";
 import {
   Dialog,
   DialogContent,
@@ -189,20 +191,7 @@ export function RemoveMemberDialog({
           </div>
         )}
 
-        {/* Loading skeleton while checking */}
-        {phase === "checking" && (
-          <div className="mt-[18px] flex flex-col gap-2 px-6">
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="flex h-[60px] animate-pulse items-center gap-3 rounded-[10px] border border-border bg-card px-[14px]"
-              >
-                <div className="h-3 flex-1 rounded bg-border" />
-                <div className="h-8 w-[180px] rounded-lg bg-border" />
-              </div>
-            ))}
-          </div>
-        )}
+        {phase === "checking" && <RemoveMemberCheckSkeleton />}
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-[10px] px-6 pb-5 pt-[18px]">
@@ -220,7 +209,11 @@ export function RemoveMemberDialog({
             onClick={handleConfirm}
             disabled={loading}
           >
-            {phase === "confirming" ? "Removing…" : "Remove member"}
+            <ButtonPendingLabel
+              pending={phase === "confirming"}
+              label="Remove member"
+              pendingLabel="Removing…"
+            />
           </Button>
         </div>
       </DialogContent>

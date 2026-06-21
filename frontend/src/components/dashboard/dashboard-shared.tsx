@@ -12,6 +12,7 @@ import type { LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { SlowFetchNotice } from "@/components/ui/slow-fetch-notice";
 import { cn } from "@/lib/utils";
 import type { MyTaskRow } from "@/lib/dashboard-api";
 
@@ -21,7 +22,7 @@ const PRIORITY_ICON = {
   HIGH: AlertCircle,
 } as const;
 
-export function DashboardSkeleton() {
+export function DashboardSkeleton({ isSlow }: { isSlow?: boolean }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -38,6 +39,7 @@ export function DashboardSkeleton() {
           <Skeleton key={i} className="h-16 w-full rounded-[10px]" />
         ))}
       </div>
+      {isSlow ? <SlowFetchNotice /> : null}
     </div>
   );
 }

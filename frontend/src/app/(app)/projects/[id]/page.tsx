@@ -8,6 +8,8 @@ import { projectsApi } from "@/lib/projects-api";
 import type { ProjectRow } from "@/lib/projects-api.types";
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { PageHeader } from "@/components/app/page-header";
+import { BoardPageSkeleton } from "@/components/ui/loading-states";
+import { useSlowFetch } from "@/hooks/use-slow-fetch";
 
 export default function ProjectBoardPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,27 +31,10 @@ export default function ProjectBoardPage() {
     })();
   }, [id]);
 
+  const isSlow = useSlowFetch(loading);
+
   if (loading) {
-    return (
-      <div className="flex h-full flex-col">
-        <div className="px-6 pt-6 pb-4">
-          <div className="h-5 w-40 animate-pulse rounded bg-border" />
-        </div>
-        <div className="flex flex-1 gap-3 overflow-x-auto px-6 pb-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="flex w-[272px] shrink-0 flex-col gap-2 rounded-[12px] border border-border bg-card p-3"
-            >
-              <div className="h-4 w-24 animate-pulse rounded bg-border" />
-              {[1, 2, 3].map((j) => (
-                <div key={j} className="h-[76px] animate-pulse rounded-[8px] bg-border" />
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <BoardPageSkeleton isSlow={isSlow} />;
   }
 
   if (!project) return null;

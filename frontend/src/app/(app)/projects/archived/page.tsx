@@ -7,9 +7,11 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
+import { ButtonPendingLabel } from "@/components/ui/button-pending-label";
 import { useAuth } from "@/providers/auth-provider";
 import { projectsApi } from "@/lib/projects-api";
 import type { ProjectRow } from "@/lib/projects-api.types";
+import { ArchivedProjectsListSkeleton } from "@/components/ui/loading-states";
 
 // Archived projects page (Figma node 1025:4538).
 // Read-only — no create, no edit. Owning PM / Owner may unarchive.
@@ -67,25 +69,7 @@ export default function ArchivedProjectsPage() {
         subtitle="Read-only. Restore a project to make it active again."
       />
 
-      {/* Loading skeleton */}
-      {loading && (
-        <div className="flex flex-col gap-[10px] rounded-[12px] border border-border bg-card p-[10px]">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex h-[64px] items-center gap-[14px] rounded-[12px] border border-border px-4 py-3"
-            >
-              <div className="h-[36px] w-[10px] shrink-0 animate-pulse rounded-[3px] bg-border" />
-              <div className="flex flex-1 flex-col gap-1.5">
-                <div className="h-3 w-40 animate-pulse rounded bg-border" />
-                <div className="h-2.5 w-56 animate-pulse rounded bg-border" />
-              </div>
-              <div className="h-[22px] w-16 animate-pulse rounded-[6px] bg-border" />
-              <div className="h-8 w-24 animate-pulse rounded-[8px] bg-border" />
-            </div>
-          ))}
-        </div>
-      )}
+      {loading && <ArchivedProjectsListSkeleton />}
 
       {/* Empty state */}
       {!loading && projects.length === 0 && (
@@ -155,7 +139,11 @@ export default function ArchivedProjectsPage() {
                     onClick={() => handleUnarchive(project)}
                   >
                     <ArchiveRestore className="size-[14px]" strokeWidth={1.75} aria-hidden />
-                    {unarchiving === project.id ? "Restoring…" : "Unarchive"}
+                    <ButtonPendingLabel
+                      pending={unarchiving === project.id}
+                      label="Unarchive"
+                      pendingLabel="Restoring…"
+                    />
                   </Button>
                 )}
               </div>

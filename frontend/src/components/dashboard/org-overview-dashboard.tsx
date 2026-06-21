@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Building2, FolderKanban, UserPlus, Users } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
 
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorCallout } from "@/components/ui/error-callout";
 import {
   DashboardSkeleton,
   MetricCard,
@@ -17,6 +17,7 @@ import {
 import { avatarColor, initials } from "@/lib/avatar";
 import { dashboardApi, type OrgOverview } from "@/lib/dashboard-api";
 import { useSlowFetch } from "@/hooks/use-slow-fetch";
+import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 import { cn } from "@/lib/utils";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -51,14 +52,17 @@ function StatusBadge({ status }: { status: string }) {
 export function OrgOverviewDashboard({ role }: { role: string }) {
   const [data, setData] = useState<OrgOverview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
   const isOwner = role === "OWNER";
 
   const load = useCallback(async () => {
+    setLoadError(null);
+    setLoading(true);
     try {
       const overview = await dashboardApi.orgOverview();
       setData(overview);
-    } catch {
-      toast.error("Failed to load dashboard.");
+    } catch (err) {
+      setLoadError(classifyLoadError(err));
     } finally {
       setLoading(false);
     }
@@ -72,7 +76,18 @@ export function OrgOverviewDashboard({ role }: { role: string }) {
 
   const isSlow = useSlowFetch(loading);
 
-  if (loading || !data) return <DashboardSkeleton isSlow={isSlow} />;
+  if (loading) return <DashboardSkeleton isSlow={isSlow} />;
+
+  if (loadError) {
+    return (
+      <ErrorCallout
+        variant={loadError}
+        onRetry={() => void load()}
+      />
+    );
+  }
+
+  if (!data) return null;
 
   const totalUsers =
     data.userCounts.OWNER +

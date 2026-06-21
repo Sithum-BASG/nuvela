@@ -2,14 +2,15 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 import { projectsApi } from "@/lib/projects-api";
 import type { ProjectRow } from "@/lib/projects-api.types";
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { PageHeader } from "@/components/app/page-header";
 import { BoardPageSkeleton } from "@/components/ui/loading-states";
+import { ErrorCallout } from "@/components/ui/error-callout";
 import { useSlowFetch } from "@/hooks/use-slow-fetch";
+import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 
 export default function ProjectBoardPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,14 +18,17 @@ export default function ProjectBoardPage() {
   const initialTaskId = searchParams.get("task");
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
 
   useEffect(() => {
     void (async () => {
+      setLoadError(null);
+      setLoading(true);
       try {
         const p = await projectsApi.get(id);
         setProject(p);
-      } catch {
-        toast.error("Failed to load project.");
+      } catch (err) {
+        setLoadError(classifyLoadError(err));
       } finally {
         setLoading(false);
       }
@@ -35,6 +39,14 @@ export default function ProjectBoardPage() {
 
   if (loading) {
     return <BoardPageSkeleton isSlow={isSlow} />;
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-6">
+        <ErrorCallout variant={loadError} onRetry={() => window.location.reload()} />
+      </div>
+    );
   }
 
   if (!project) return null;

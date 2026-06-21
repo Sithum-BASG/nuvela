@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CheckSquare, FolderKanban } from "lucide-react";
-import { toast } from "sonner";
 
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorCallout } from "@/components/ui/error-callout";
 import {
   DashboardSkeleton,
   ProjectProgressBar,
@@ -15,6 +15,7 @@ import {
 } from "@/components/dashboard/dashboard-shared";
 import { dashboardApi, type MyTaskRow, type ProjectProgressRow } from "@/lib/dashboard-api";
 import { useSlowFetch } from "@/hooks/use-slow-fetch";
+import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 
 function isDueSoon(task: MyTaskRow): boolean {
   if (!task.dueDate || task.isCompletedColumn) return false;
@@ -29,14 +30,17 @@ export function MyWorkDashboard() {
   const [tasks, setTasks] = useState<MyTaskRow[]>([]);
   const [projects, setProjects] = useState<ProjectProgressRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
 
   const load = useCallback(async () => {
+    setLoadError(null);
+    setLoading(true);
     try {
       const data = await dashboardApi.myWork();
       setTasks(data.tasks);
       setProjects(data.projects);
-    } catch {
-      toast.error("Failed to load dashboard.");
+    } catch (err) {
+      setLoadError(classifyLoadError(err));
     } finally {
       setLoading(false);
     }
@@ -52,6 +56,15 @@ export function MyWorkDashboard() {
   const isSlow = useSlowFetch(loading);
 
   if (loading) return <DashboardSkeleton isSlow={isSlow} />;
+
+  if (loadError) {
+    return (
+      <ErrorCallout
+        variant={loadError}
+        onRetry={() => void load()}
+      />
+    );
+  }
 
   const hasNoTasks = tasks.length === 0;
   const hasNoProjects = projects.length === 0;

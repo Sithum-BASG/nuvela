@@ -23,6 +23,7 @@ import { AttachmentsService } from '../src/tasks/attachments.service';
 import { CommentsController } from '../src/tasks/comments.controller';
 import { CommentsService } from '../src/tasks/comments.service';
 import { TasksService } from '../src/tasks/tasks.service';
+import { NotificationsService } from '../src/notifications/notifications.service';
 
 const TEST_ACCESS_SECRET = 'test-access-secret';
 
@@ -497,6 +498,10 @@ describe('Phase 6 Collaboration (e2e)', () => {
         CommentsService,
         AttachmentsService,
         ActivityService,
+        {
+          provide: NotificationsService,
+          useValue: { notify: jest.fn(), notifyMany: jest.fn() },
+        },
         { provide: PrismaService, useValue: prismaMock },
         { provide: StorageService, useValue: storageService },
         { provide: APP_GUARD, useClass: JwtAuthGuard },

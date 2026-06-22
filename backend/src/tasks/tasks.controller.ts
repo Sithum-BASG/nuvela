@@ -26,7 +26,7 @@ import { AddAssigneeDto } from './dto/add-assignee.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { MoveTaskDto } from './dto/move-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { ColumnRow, TaskRow, TasksService } from './tasks.service';
+import { ColumnRow, TaskDetailRow, TaskRow, TasksService } from './tasks.service';
 
 @ApiTags('tasks')
 @ApiBearerAuth()
@@ -77,7 +77,7 @@ export class TasksController {
   getTask(
     @CurrentUser() user: CurrentUserPayload,
     @Param('id') taskId: string,
-  ): Promise<TaskRow> {
+  ): Promise<TaskDetailRow> {
     return this.tasksService.getTask(user, taskId);
   }
 

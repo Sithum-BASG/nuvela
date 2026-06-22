@@ -38,6 +38,10 @@ export type TaskRow = {
   updatedAt: string;
 };
 
+export type TaskDetailRow = TaskRow & {
+  checklist: ChecklistItemRow[];
+};
+
 export type ChecklistItemRow = {
   id: string;
   text: string;

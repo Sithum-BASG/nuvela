@@ -108,6 +108,7 @@ export class UsersService {
         passwordHash: await hashPassword(tempPassword),
         role: dto.role,
         status: UserStatus.PENDING,
+        emailVerified: true,
         mustResetPassword: true,
         tempPasswordExpiresAt: inviteExpiry(),
       },
@@ -274,6 +275,7 @@ export class UsersService {
       data: {
         passwordHash: await hashPassword(tempPassword),
         mustResetPassword: true,
+        emailVerified: true,
         tempPasswordExpiresAt: inviteExpiry(),
         status: UserStatus.PENDING,
       },

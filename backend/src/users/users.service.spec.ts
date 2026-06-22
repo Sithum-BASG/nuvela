@@ -145,6 +145,7 @@ describe('UsersService', () => {
         passwordHash: 'hashed-TempPass1',
         role: Role.PROJECT_MANAGER,
         status: UserStatus.PENDING,
+        emailVerified: true,
         mustResetPassword: true,
       }),
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -374,6 +375,7 @@ describe('UsersService', () => {
       data: expect.objectContaining({
         passwordHash: 'hashed-TempPass1',
         mustResetPassword: true,
+        emailVerified: true,
         status: UserStatus.PENDING,
       }),
     });

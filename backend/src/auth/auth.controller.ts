@@ -171,17 +171,16 @@ export class AuthController {
     this.tokenService.setAuthCookies(res, tokens);
   }
 
+  @Public()
   @Post('logout')
   @HttpCode(200)
-  @AllowWhileMustReset()
   @ApiOperation({ summary: 'Log out and clear auth cookies.' })
   @ApiOkResponse({ description: 'Logged out.' })
   async logout(
-    @CurrentUser() user: AuthenticatedUser,
     @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
   ): Promise<void> {
-    await this.authService.logout(user, req.cookies?.refresh_token);
+    await this.authService.logoutFromCookies(req.cookies?.refresh_token);
     this.tokenService.clearAuthCookies(res);
   }
 

@@ -11,6 +11,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 
 import { authApi, type SessionUser } from "@/lib/auth-api";
+import { clearLoggingOut, markLoggingOut } from "@/lib/session-state";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -114,10 +115,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    markLoggingOut();
     setUser(null);
     setStatus("unauthenticated");
     router.replace("/login");
-    void authApi.logout().catch(() => {});
+    void authApi.logout().finally(() => {
+      clearLoggingOut();
+    });
   }, [router]);
 
   return (

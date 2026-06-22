@@ -1,13 +1,17 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { isAllowedFrontendOrigin } from './common/frontend-origins';
+import { securityHeadersMiddleware } from './common/security-headers.middleware';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.disable('x-powered-by');
   app.use(cookieParser());
+  app.use(securityHeadersMiddleware);
 
   // CORS locked to allowed frontend origins WITH credentials (HTTP-only cookies).
   // Never use '*' with credentials. Per TRD auth/CORS section.

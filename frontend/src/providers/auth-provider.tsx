@@ -21,7 +21,7 @@ type AuthContextValue = {
   login: (user: SessionUser) => void;
   /** Re-fetches the session from the server (e.g. after first-login password reset). */
   refreshSession: () => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -113,11 +113,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const logout = useCallback(async () => {
-    await authApi.logout().catch(() => {});
+  const logout = useCallback(() => {
     setUser(null);
     setStatus("unauthenticated");
-    router.push("/login");
+    router.replace("/login");
+    void authApi.logout().catch(() => {});
   }, [router]);
 
   return (

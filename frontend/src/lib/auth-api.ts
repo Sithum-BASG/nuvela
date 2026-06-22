@@ -52,6 +52,7 @@ const NO_REFRESH = new Set([
   "/auth/refresh",
   "/auth/me",
   "/auth/change-password",
+  "/auth/logout",
 ]);
 
 function throwAuthError(
@@ -116,7 +117,17 @@ export const authApi = {
   login: (input: { email: string; password: string }) =>
     request<LoginResult>("/auth/login", "POST", input),
 
-  logout: () => request<void>("/auth/logout", "POST"),
+  // Best-effort server logout (revoke refresh + clear cookies). Never blocks UI;
+  // retries once after refresh when the access token has expired.
+  logout: async () => {
+    let res = await rawFetch("/auth/logout", "POST");
+    if (res.status === 401) {
+      const refreshed = await rawFetch("/auth/refresh", "POST");
+      if (refreshed.ok) {
+        await rawFetch("/auth/logout", "POST");
+      }
+    }
+  },
 
   refresh: () => request<void>("/auth/refresh", "POST"),
 

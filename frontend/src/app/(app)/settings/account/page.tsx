@@ -83,7 +83,7 @@ export default function AccountSettingsPage() {
         newPassword: values.newPassword,
       });
       toast.success("Password changed. Please sign in again.");
-      await logout();
+      logout();
     } catch (err) {
       setPasswordError(
         err instanceof ApiError

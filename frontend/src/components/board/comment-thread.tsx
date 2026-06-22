@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
@@ -19,6 +19,7 @@ type Props = {
   projectId: string;
   me: Me;
   canModerate: boolean;
+  variant?: "inline" | "sidebar";
 };
 
 function renderCommentBody(body: string, mentions: CommentRow["mentions"]) {
@@ -58,7 +59,13 @@ function renderCommentBody(body: string, mentions: CommentRow["mentions"]) {
   return <>{parts}</>;
 }
 
-export function CommentThread({ taskId, projectId, me, canModerate }: Props) {
+export function CommentThread({
+  taskId,
+  projectId,
+  me,
+  canModerate,
+  variant = "inline",
+}: Props) {
   const [comments, setComments] = useState<CommentRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -122,25 +129,44 @@ export function CommentThread({ taskId, projectId, me, canModerate }: Props) {
     }
   }
 
-  return (
-    <div className="flex flex-col gap-3">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-        Comments
-      </span>
+  const isSidebar = variant === "sidebar";
 
-      {loading ? (
-        <TaskRowSkeleton count={2} />
-      ) : comments.length === 0 ? (
-        <EmptyState
-          icon={MessageSquare}
-          title="No comments yet"
-          description="Start the conversation or mention a project member."
-          size="compact"
-          className="rounded-[10px] border border-dashed border-border bg-surface-muted/50"
-        />
-      ) : (
-        <div className="flex flex-col gap-3">
-          {comments.map((comment) => {
+  return (
+    <div
+      className={cn(
+        "flex flex-col",
+        isSidebar ? "min-h-0 flex-1" : "gap-3",
+      )}
+    >
+      {!isSidebar && (
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+          Comments
+        </span>
+      )}
+
+      <div
+        className={cn(
+          isSidebar && "min-h-0 flex-1 overflow-y-auto",
+          !isSidebar && "contents",
+        )}
+      >
+        {loading ? (
+          <TaskRowSkeleton count={2} />
+        ) : comments.length === 0 ? (
+          <EmptyState
+            icon={MessageSquare}
+            title="No comments yet"
+            description="Start the conversation or mention a project member."
+            size={isSidebar ? "default" : "compact"}
+            className={cn(
+              isSidebar
+                ? "mx-auto my-8 max-w-[380px] rounded-card border border-border bg-card px-10 py-10"
+                : "rounded-[10px] border border-dashed border-border bg-surface-muted/50",
+            )}
+          />
+        ) : (
+          <div className={cn("flex flex-col gap-3", isSidebar && "pb-3")}>
+            {comments.map((comment) => {
             const isOwn = comment.author.id === me.id;
             const canDelete = isOwn || canModerate;
 
@@ -202,14 +228,21 @@ export function CommentThread({ taskId, projectId, me, canModerate }: Props) {
               </article>
             );
           })}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
-      <MentionInput
-        projectId={projectId}
-        meName={me.name}
-        onSubmit={handleCreate}
-      />
+      <div
+        className={cn(
+          isSidebar && "shrink-0 border-t border-border pt-4",
+        )}
+      >
+        <MentionInput
+          projectId={projectId}
+          meName={me.name}
+          onSubmit={handleCreate}
+        />
+      </div>
     </div>
   );
 }

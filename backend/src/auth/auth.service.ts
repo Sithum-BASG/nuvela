@@ -23,6 +23,8 @@ import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignupDto } from './dto/signup.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 type PurposeTokenPayload = {
   sub: string;
@@ -208,6 +210,46 @@ export class AuthService {
     return user;
   }
 
+  async updateAccount(
+    user: AuthenticatedUser,
+    dto: UpdateAccountDto,
+  ): Promise<CurrentUserResult> {
+    await this.prisma.user.update({
+      where: { id: user.userId },
+      data: { name: dto.name.trim() },
+    });
+    return this.getCurrentUser(user.userId);
+  }
+
+  async changePassword(
+    user: AuthenticatedUser,
+    dto: ChangePasswordDto,
+  ): Promise<void> {
+    const existingUser = await this.prisma.user.findUniqueOrThrow({
+      where: { id: user.userId },
+    });
+
+    if (
+      !(await comparePassword(dto.currentPassword, existingUser.passwordHash))
+    ) {
+      throw new UnauthorizedException({
+        code: 'INVALID_CREDENTIALS',
+        message: 'Current password is incorrect.',
+      });
+    }
+
+    assertPasswordComplexity(dto.newPassword);
+    await this.prisma.user.update({
+      where: { id: user.userId },
+      data: {
+        passwordHash: await hashPassword(dto.newPassword),
+        mustResetPassword: false,
+        tempPasswordExpiresAt: null,
+      },
+    });
+    await this.tokenService.revokeAllForUser(user.userId);
+  }
+
   async provisionUser(input: ProvisionUserInput): Promise<User> {
     const tempPassword = generateTempPassword();
     const user = await this.prisma.user.create({
@@ -345,8 +387,7 @@ export class AuthService {
     // Same email can exist in multiple orgs (e.g. retried Owner signup). Prefer
     // a verified, usable account over an older pending duplicate.
     const verified = matches.find(
-      (user) =>
-        user.emailVerified && user.status !== UserStatus.DEACTIVATED,
+      (user) => user.emailVerified && user.status !== UserStatus.DEACTIVATED,
     );
     return verified ?? matches[0];
   }

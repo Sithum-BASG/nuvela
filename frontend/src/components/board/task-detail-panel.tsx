@@ -441,7 +441,7 @@ export function TaskDetailPanel({
               </div>
             </div>
 
-            {/* Comments sidebar ΓÇö desktop */}
+            {/* Comments sidebar — desktop */}
             {me && (
               <>
                 <div className="hidden w-px shrink-0 bg-border md:block" />

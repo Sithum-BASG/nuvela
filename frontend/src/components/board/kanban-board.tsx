@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useCallback, useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -21,20 +22,32 @@ import { useAuth } from "@/providers/auth-provider";
 import type { ColumnRow, TaskRow } from "@/lib/tasks-api.types";
 import { BoardColumn } from "./board-column";
 import { TaskCard } from "./task-card";
+import { CreateTaskModal } from "./create-task-modal";
+import { PageHeader } from "@/components/app/page-header";
+import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api-client";
 import { TaskDetailPanel } from "./task-detail-panel";
 import { BoardSkeleton } from "@/components/ui/loading-states";
 import { ErrorCallout } from "@/components/ui/error-callout";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useSlowFetch } from "@/hooks/use-slow-fetch";
 import { classifyLoadError, type LoadErrorKind } from "@/lib/load-error";
 
 type Props = {
   projectId: string;
   projectManagerId: string;
+  projectName: string;
+  projectDescription?: string | null;
   initialTaskId?: string | null;
 };
 
-export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Props) {
+export function KanbanBoard({
+  projectId,
+  projectManagerId,
+  projectName,
+  projectDescription,
+  initialTaskId,
+}: Props) {
   const { user: me } = useAuth();
   const [columns, setColumns] = useState<ColumnRow[]>([]);
   const [tasks, setTasks] = useState<TaskRow[]>([]);
@@ -45,6 +58,7 @@ export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Prop
   const [activeTask, setActiveTask] = useState<TaskRow | null>(null);
   // detail panel
   const [selectedTask, setSelectedTask] = useState<TaskRow | null>(null);
+  const [headerCreateOpen, setHeaderCreateOpen] = useState(false);
 
   // optimistic tasks layer
   const [optimisticTasks, setOptimisticTask] = useOptimistic(
@@ -177,11 +191,32 @@ export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Prop
 
   const isSlow = useSlowFetch(loading);
 
-  if (loading) return <BoardSkeleton isSlow={isSlow} />;
+  const completedColumnIds = new Set(
+    columns.filter((c) => c.isCompletedColumn).map((c) => c.id),
+  );
+  const completedCount = tasks.filter((t) =>
+    completedColumnIds.has(t.columnId),
+  ).length;
+  const boardSubtitle =
+    tasks.length > 0
+      ? `${completedCount} of ${tasks.length} tasks complete`
+      : projectDescription ?? undefined;
+
+  if (loading) {
+    return (
+      <div className="flex h-full min-h-0 flex-col gap-5 rounded-card bg-card p-5">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-36" />
+        </div>
+        <BoardSkeleton isSlow={isSlow} />
+      </div>
+    );
+  }
 
   if (loadError) {
     return (
-      <div className="px-6 py-4">
+      <div className="rounded-card bg-card p-5">
         <ErrorCallout variant={loadError} onRetry={() => void load()} />
       </div>
     );
@@ -189,40 +224,69 @@ export function KanbanBoard({ projectId, projectManagerId, initialTaskId }: Prop
 
   return (
     <>
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragEnd={onDragEnd}
-    >
-      <div className="flex h-full gap-3 overflow-x-auto px-4 pb-4 pt-2 sm:px-6">
-        {columns.map((col) => (
-          <BoardColumn
-            key={col.id}
-            column={col}
-            tasks={optimisticTasks.filter((t) => t.columnId === col.id)}
-            isPm={isPm}
-            isCollaborator={me?.role === "COLLABORATOR"}
-            projectId={projectId}
-            onTaskClick={(task) => setSelectedTask(task)}
-            onTaskCreated={(task) => setTasks((prev) => [...prev, task])}
-            onTaskUpdated={(task) =>
-              setTasks((prev) => prev.map((t) => (t.id === task.id ? task : t)))
-            }
-            onTaskDeleted={(taskId) =>
-              setTasks((prev) => prev.filter((t) => t.id !== taskId))
-            }
-          />
-        ))}
+    <div className="flex h-full min-h-0 flex-col gap-5 rounded-card bg-card p-5">
+      <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
+        <PageHeader title={projectName} subtitle={boardSubtitle} />
+        {isPm && (
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              variant="outline"
+              render={<Link href={`/projects/${projectId}/settings`} />}
+            >
+              Project settings
+            </Button>
+            <Button onClick={() => setHeaderCreateOpen(true)}>New task</Button>
+          </div>
+        )}
       </div>
 
-      <DragOverlay>
-        {activeTask ? (
-          <TaskCard task={activeTask} isDragging />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDragEnd={onDragEnd}
+      >
+        <div className="flex min-h-0 flex-1 gap-4 overflow-x-auto pb-1">
+          {columns.map((col) => (
+            <BoardColumn
+              key={col.id}
+              column={col}
+              tasks={optimisticTasks.filter((t) => t.columnId === col.id)}
+              isPm={isPm}
+              isCollaborator={me?.role === "COLLABORATOR"}
+              projectId={projectId}
+              onTaskClick={(task) => setSelectedTask(task)}
+              onTaskCreated={(task) => setTasks((prev) => [...prev, task])}
+              onTaskUpdated={(task) =>
+                setTasks((prev) => prev.map((t) => (t.id === task.id ? task : t)))
+              }
+              onTaskDeleted={(taskId) =>
+                setTasks((prev) => prev.filter((t) => t.id !== taskId))
+              }
+            />
+          ))}
+        </div>
+
+        <DragOverlay>
+          {activeTask ? (
+            <TaskCard task={activeTask} isDragging />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+    </div>
+
+    {isPm && (
+      <CreateTaskModal
+        open={headerCreateOpen}
+        projectId={projectId}
+        onClose={() => setHeaderCreateOpen(false)}
+        onCreated={(task) => {
+          setTasks((prev) => [...prev, task]);
+          setHeaderCreateOpen(false);
+        }}
+      />
+    )}
 
     <TaskDetailPanel
       task={selectedTask}

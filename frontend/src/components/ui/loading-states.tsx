@@ -1,5 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlowFetchNotice } from "@/components/ui/slow-fetch-notice";
+import type { ProjectsView } from "@/components/projects/projects-view-toggle";
 
 export function LoadingShell({
   isSlow,
@@ -19,15 +20,12 @@ export function LoadingShell({
 export function BoardSkeleton({ isSlow }: { isSlow?: boolean }) {
   return (
     <LoadingShell isSlow={isSlow}>
-      <div className="flex h-full gap-3 overflow-x-auto px-6 pb-4 pt-2">
+      <div className="flex min-h-[320px] flex-1 gap-4 overflow-x-auto pb-1">
         {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="flex w-[272px] shrink-0 flex-col gap-2 rounded-[12px] border border-border bg-card p-3"
-          >
-            <Skeleton className="mb-1 h-4 w-24" />
-            {[1, 2, 3].map((j) => (
-              <Skeleton key={j} className="h-[76px] w-full rounded-[8px]" />
+          <div key={i} className="flex min-w-[260px] flex-1 flex-col gap-3">
+            <Skeleton className="h-5 w-28" />
+            {[1, 2].map((j) => (
+              <Skeleton key={j} className="h-[108px] w-full rounded-card" />
             ))}
           </div>
         ))}
@@ -38,16 +36,56 @@ export function BoardSkeleton({ isSlow }: { isSlow?: boolean }) {
 
 export function BoardPageSkeleton({ isSlow }: { isSlow?: boolean }) {
   return (
-    <div className="flex h-full flex-col">
-      <div className="px-6 pt-6 pb-4">
-        <Skeleton className="h-5 w-40" />
+    <div className="flex h-full flex-col p-6 sm:p-8">
+      <div className="flex flex-1 flex-col gap-5 rounded-card bg-card p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-36" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-32 rounded-control" />
+            <Skeleton className="h-10 w-24 rounded-control" />
+          </div>
+        </div>
+        <BoardSkeleton isSlow={isSlow} />
       </div>
-      <BoardSkeleton isSlow={isSlow} />
     </div>
   );
 }
 
-export function ProjectsListSkeleton({ isSlow }: { isSlow?: boolean }) {
+export function ProjectsListSkeleton({
+  view = "list",
+  isSlow,
+}: {
+  view?: ProjectsView;
+  isSlow?: boolean;
+}) {
+  if (view === "cards") {
+    return (
+      <LoadingShell isSlow={isSlow}>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="flex min-h-[150px] flex-col gap-3 rounded-[12px] border border-border bg-card px-5 py-[18px]"
+            >
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="size-7 shrink-0 rounded-[8px]" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <Skeleton className="h-3 w-full" />
+              <div className="mt-auto flex items-center justify-between">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-3 w-10" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </LoadingShell>
+    );
+  }
+
   return (
     <LoadingShell isSlow={isSlow}>
       <div className="flex flex-col gap-[10px] rounded-[12px] border border-border bg-card p-[10px]">
@@ -61,6 +99,8 @@ export function ProjectsListSkeleton({ isSlow }: { isSlow?: boolean }) {
               <Skeleton className="h-3 w-40" />
               <Skeleton className="h-2.5 w-56" />
             </div>
+            <Skeleton className="hidden h-3 w-8 sm:block" />
+            <Skeleton className="hidden h-9 w-24 rounded-full md:block" />
             <Skeleton className="h-[22px] w-14 rounded-[6px]" />
           </div>
         ))}

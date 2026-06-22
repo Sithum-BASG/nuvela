@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { projectsApi } from "@/lib/projects-api";
 import type { ProjectRow } from "@/lib/projects-api.types";
 import { KanbanBoard } from "@/components/board/kanban-board";
-import { PageHeader } from "@/components/app/page-header";
 import { BoardPageSkeleton } from "@/components/ui/loading-states";
 import { ErrorCallout } from "@/components/ui/error-callout";
 import { useSlowFetch } from "@/hooks/use-slow-fetch";
@@ -43,7 +42,7 @@ export default function ProjectBoardPage() {
 
   if (loadError) {
     return (
-      <div className="p-6">
+      <div className="p-6 sm:p-8">
         <ErrorCallout variant={loadError} onRetry={() => window.location.reload()} />
       </div>
     );
@@ -52,20 +51,14 @@ export default function ProjectBoardPage() {
   if (!project) return null;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      <div className="px-4 pt-6 pb-3 sm:px-6">
-        <PageHeader
-          title={project.name}
-          subtitle={project.description ?? undefined}
-        />
-      </div>
-      <div className="flex-1 overflow-hidden">
-        <KanbanBoard
-          projectId={project.id}
-          projectManagerId={project.managerId}
-          initialTaskId={initialTaskId}
-        />
-      </div>
+    <div className="flex h-full flex-col p-6 sm:p-8">
+      <KanbanBoard
+        projectId={project.id}
+        projectManagerId={project.managerId}
+        projectName={project.name}
+        projectDescription={project.description}
+        initialTaskId={initialTaskId}
+      />
     </div>
   );
 }

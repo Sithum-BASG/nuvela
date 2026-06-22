@@ -3,15 +3,24 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { isAllowedFrontendOrigin } from './common/frontend-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
 
-  // CORS locked to the frontend origin WITH credentials (for HTTP-only cookies
-  // in Phase 3). Never use '*' with credentials. Per TRD auth/CORS section.
-  const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
-  app.enableCors({ origin: frontendUrl, credentials: true });
+  // CORS locked to allowed frontend origins WITH credentials (HTTP-only cookies).
+  // Never use '*' with credentials. Per TRD auth/CORS section.
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (isAllowedFrontendOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   const swaggerConfig = new DocumentBuilder()

@@ -6,7 +6,7 @@ A calm, multi-tenant, role-based Kanban task-management workspace built for INTE
 
 | App | URL |
 |---|---|
-| Frontend | https://nuvela.vercel.app |
+| Frontend | https://nuvela.space |
 | Backend API | https://nuvela.onrender.com |
 | Swagger UI | https://nuvela.onrender.com/api |
 | Health check | https://nuvela.onrender.com/health |

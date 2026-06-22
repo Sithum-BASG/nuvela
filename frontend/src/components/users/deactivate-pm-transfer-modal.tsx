@@ -76,7 +76,7 @@ export function DeactivatePmTransferModal({
 
   return (
     <Dialog open={!!user && projects.length > 0} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="w-[480px] gap-0 rounded-[14px] p-0 shadow-[0px_1px_2px_rgba(0,0,0,0.05),0px_12px_16px_rgba(0,0,0,0.10)]">
+      <DialogContent showCloseButton={false} className="w-[480px] gap-0 rounded-[14px] p-0 shadow-[0px_1px_2px_rgba(0,0,0,0.05),0px_12px_16px_rgba(0,0,0,0.10)]">
         {/* Header */}
         <div className="flex items-start justify-between px-6 pb-4 pt-6">
           <div className="flex items-start gap-3">

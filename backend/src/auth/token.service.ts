@@ -126,6 +126,18 @@ export class TokenService {
     });
   }
 
+  /** Best-effort user id from a refresh cookie; null when invalid or expired. */
+  async tryResolveUserIdFromRefresh(
+    rawRefresh: string,
+  ): Promise<string | null> {
+    try {
+      const payload = await this.verifyRefresh(rawRefresh);
+      return payload.sub;
+    } catch {
+      return null;
+    }
+  }
+
   private async verifyRefresh(rawRefresh: string): Promise<AuthTokenPayload> {
     try {
       // jwt adds iat/exp to the decoded token; return a clean payload so

@@ -15,6 +15,8 @@ import { TaskCard } from "./task-card";
 import { CreateTaskModal } from "./create-task-modal";
 import { cn } from "@/lib/utils";
 
+const LOCKED_COLUMN_HINT = "Only the PM can complete tasks";
+
 type Props = {
   column: ColumnRow;
   tasks: TaskRow[];
@@ -26,6 +28,18 @@ type Props = {
   onTaskUpdated: (task: TaskRow) => void;
   onTaskDeleted: (taskId: string) => void;
 };
+
+function LockedDropZone() {
+  return (
+    <div
+      className="flex flex-col items-center justify-center gap-2 rounded-[10px] border border-dashed border-border bg-surface/50 px-4 py-6"
+      aria-label={LOCKED_COLUMN_HINT}
+    >
+      <Lock className="size-[18px] text-text-muted" strokeWidth={2} aria-hidden />
+      <p className="text-center text-[12px] text-text-muted">{LOCKED_COLUMN_HINT}</p>
+    </div>
+  );
+}
 
 export function BoardColumn({
   column,
@@ -40,7 +54,11 @@ export function BoardColumn({
 }: Props) {
   const [createOpen, setCreateOpen] = useState(false);
 
-  const { setNodeRef, isOver } = useDroppable({ id: column.id });
+  const isLockedForCollaborator = isCollaborator && column.isPmGated;
+  const { setNodeRef, isOver } = useDroppable({
+    id: column.id,
+    disabled: isLockedForCollaborator,
+  });
 
   const sorted = [...tasks].sort((a, b) => a.position - b.position);
   const isAccentColumn = column.position === 0;
@@ -66,13 +84,13 @@ export function BoardColumn({
           <span className="flex items-center justify-center rounded-[10px] bg-border/50 px-[7px] py-px text-[12px] font-medium text-text-secondary">
             {tasks.length}
           </span>
-          {isCollaborator && column.isPmGated && (
-            <span
-              className="flex items-center gap-0.5 rounded-[4px] bg-warning-tint px-1.5 py-[2px] text-[10px] font-medium text-warning"
-              title="Only a Project Manager can move tasks into this column"
-            >
-              <Lock className="size-[9px]" strokeWidth={2.5} />
-              PM only
+          {isLockedForCollaborator && (
+            <span title={LOCKED_COLUMN_HINT}>
+              <Lock
+                className="size-3.5 shrink-0 text-text-muted"
+                strokeWidth={2}
+                aria-label={LOCKED_COLUMN_HINT}
+              />
             </span>
           )}
         </div>
@@ -91,7 +109,7 @@ export function BoardColumn({
         ref={setNodeRef}
         className={cn(
           "flex min-h-[120px] flex-col gap-2 rounded-card transition-colors duration-150 motion-reduce:transition-none",
-          isOver && "bg-accent-tint/30",
+          isOver && !isLockedForCollaborator && "bg-accent-tint/30",
         )}
       >
         <SortableContext
@@ -103,6 +121,7 @@ export function BoardColumn({
               key={task.id}
               task={task}
               isPm={isPm}
+              dimmed={isLockedForCollaborator}
               onClick={() => onTaskClick(task)}
               onUpdated={onTaskUpdated}
               onDeleted={onTaskDeleted}
@@ -110,7 +129,10 @@ export function BoardColumn({
           ))}
         </SortableContext>
 
-        {tasks.length === 0 &&
+        {isLockedForCollaborator ? (
+          <LockedDropZone />
+        ) : (
+          tasks.length === 0 &&
           (column.position === 0 && isPm ? (
             <EmptyState
               size="compact"
@@ -125,7 +147,8 @@ export function BoardColumn({
             />
           ) : (
             <EmptyState size="minimal" icon={CheckSquare} title="No tasks" />
-          ))}
+          ))
+        )}
       </div>
 
       {isPm && (

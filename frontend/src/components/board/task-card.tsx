@@ -16,6 +16,7 @@ import { InlineSpinner } from "@/components/ui/inline-spinner";
 type Props = {
   task: TaskRow;
   isDragging?: boolean;
+  dimmed?: boolean;
   isPm?: boolean;
   onClick?: () => void;
   onUpdated?: (task: TaskRow) => void;
@@ -33,6 +34,7 @@ const PRIORITY_DOT = {
 export function TaskCard({
   task,
   isDragging = false,
+  dimmed = false,
   isPm = false,
   onClick,
   onDeleted,
@@ -85,6 +87,7 @@ export function TaskCard({
         "hover:border-border/80 active:cursor-grabbing",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         isGhost && "opacity-40",
+        dimmed && !isDragging && "opacity-45",
         isDragging && "rotate-[1.5deg] shadow-lg opacity-95 cursor-grabbing",
         deleting && "pointer-events-none opacity-50",
       )}

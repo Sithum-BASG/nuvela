@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Patch,
   Post,
   Req,
   Res,
@@ -33,6 +34,8 @@ import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignupDto } from './dto/signup.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { TokenService } from './token.service';
 
 type RequestWithCookies = Request & {
@@ -70,6 +73,30 @@ export class AuthController {
   })
   async me(@CurrentUser() user: AuthenticatedUser): Promise<CurrentUserResult> {
     return this.authService.getCurrentUser(user.userId);
+  }
+
+  @Patch('me')
+  @AllowWhileMustReset()
+  @ApiOperation({ summary: 'Update the current user profile.' })
+  @ApiOkResponse({ description: 'Updated profile.' })
+  async updateMe(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateAccountDto,
+  ): Promise<CurrentUserResult> {
+    return this.authService.updateAccount(user, dto);
+  }
+
+  @Post('change-password')
+  @HttpCode(200)
+  @AllowWhileMustReset()
+  @ApiOperation({ summary: 'Change the current user password.' })
+  @ApiOkResponse({ description: 'Password changed; other sessions revoked.' })
+  @ApiUnauthorizedResponse({ description: 'Current password is incorrect.' })
+  async changePassword(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<void> {
+    await this.authService.changePassword(user, dto);
   }
 
   @Public()

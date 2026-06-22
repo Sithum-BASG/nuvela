@@ -42,3 +42,22 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password."),
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters."),
+    confirmPassword: z.string().min(1, "Re-enter your password."),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
+export type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
+
+export const accountProfileSchema = z.object({
+  name: z.string().trim().min(1, "Enter your full name."),
+});
+export type AccountProfileValues = z.infer<typeof accountProfileSchema>;

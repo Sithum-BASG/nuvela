@@ -53,7 +53,11 @@ export type CreateTaskInput = {
   assigneeIds?: string[];
 };
 
-export type UpdateTaskInput = Partial<Omit<CreateTaskInput, "assigneeIds">>;
+export type UpdateTaskInput = Partial<
+  Omit<CreateTaskInput, "assigneeIds" | "dueDate">
+> & {
+  dueDate?: string | null;
+};
 
 export type MoveTaskInput = {
   columnId: string;

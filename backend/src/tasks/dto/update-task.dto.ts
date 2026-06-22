@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 export class UpdateTaskDto {
@@ -25,8 +26,12 @@ export class UpdateTaskDto {
   @IsEnum(Priority)
   priority?: Priority;
 
-  @ApiPropertyOptional({ description: 'Due date (ISO 8601)' })
+  @ApiPropertyOptional({
+    description: 'Due date (ISO 8601). Pass null to clear.',
+    nullable: true,
+  })
   @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== '')
   @IsDateString()
-  dueDate?: string;
+  dueDate?: string | null;
 }

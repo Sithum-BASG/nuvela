@@ -123,15 +123,9 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
   // ─── Auth guard ──────────────────────────────────────────────────────────────
 
   it('rejects unauthenticated requests with 401', async () => {
-    await request(app.getHttpServer())
-      .get('/projects/p1/columns')
-      .expect(401);
-    await request(app.getHttpServer())
-      .get('/projects/p1/tasks')
-      .expect(401);
-    await request(app.getHttpServer())
-      .get('/projects/p1/labels')
-      .expect(401);
+    await request(app.getHttpServer()).get('/projects/p1/columns').expect(401);
+    await request(app.getHttpServer()).get('/projects/p1/tasks').expect(401);
+    await request(app.getHttpServer()).get('/projects/p1/labels').expect(401);
   });
 
   // ─── Columns ─────────────────────────────────────────────────────────────────
@@ -142,9 +136,9 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
     expect(
       await status('get', '/projects/p1/columns', Role.PROJECT_MANAGER),
     ).toBe(200);
-    expect(
-      await status('get', '/projects/p1/columns', Role.COLLABORATOR),
-    ).toBe(200);
+    expect(await status('get', '/projects/p1/columns', Role.COLLABORATOR)).toBe(
+      200,
+    );
   });
 
   // ─── Tasks ───────────────────────────────────────────────────────────────────
@@ -155,9 +149,9 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
     expect(
       await status('get', '/projects/p1/tasks', Role.PROJECT_MANAGER),
     ).toBe(200);
-    expect(
-      await status('get', '/projects/p1/tasks', Role.COLLABORATOR),
-    ).toBe(200);
+    expect(await status('get', '/projects/p1/tasks', Role.COLLABORATOR)).toBe(
+      200,
+    );
   });
 
   it('POST /projects/:id/tasks — PM/Owner allowed, ADMIN/COLLABORATOR forbidden', async () => {
@@ -165,12 +159,12 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
     expect(
       await status('post', '/projects/p1/tasks', Role.PROJECT_MANAGER, body),
     ).toBe(201);
-    expect(
-      await status('post', '/projects/p1/tasks', Role.OWNER, body),
-    ).toBe(201);
-    expect(
-      await status('post', '/projects/p1/tasks', Role.ADMIN, body),
-    ).toBe(403);
+    expect(await status('post', '/projects/p1/tasks', Role.OWNER, body)).toBe(
+      201,
+    );
+    expect(await status('post', '/projects/p1/tasks', Role.ADMIN, body)).toBe(
+      403,
+    );
     expect(
       await status('post', '/projects/p1/tasks', Role.COLLABORATOR, body),
     ).toBe(403);
@@ -184,20 +178,18 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
 
   it('PATCH /tasks/:id — PM/Owner allowed, ADMIN/COLLABORATOR forbidden', async () => {
     const body = { title: 'Updated' };
-    expect(
-      await status('patch', '/tasks/t1', Role.PROJECT_MANAGER, body),
-    ).toBe(200);
+    expect(await status('patch', '/tasks/t1', Role.PROJECT_MANAGER, body)).toBe(
+      200,
+    );
     expect(await status('patch', '/tasks/t1', Role.OWNER, body)).toBe(200);
     expect(await status('patch', '/tasks/t1', Role.ADMIN, body)).toBe(403);
-    expect(
-      await status('patch', '/tasks/t1', Role.COLLABORATOR, body),
-    ).toBe(403);
+    expect(await status('patch', '/tasks/t1', Role.COLLABORATOR, body)).toBe(
+      403,
+    );
   });
 
   it('DELETE /tasks/:id — PM/Owner allowed, ADMIN/COLLABORATOR forbidden', async () => {
-    expect(
-      await status('delete', '/tasks/t1', Role.PROJECT_MANAGER),
-    ).toBe(204);
+    expect(await status('delete', '/tasks/t1', Role.PROJECT_MANAGER)).toBe(204);
     expect(await status('delete', '/tasks/t1', Role.OWNER)).toBe(204);
     expect(await status('delete', '/tasks/t1', Role.ADMIN)).toBe(403);
     expect(await status('delete', '/tasks/t1', Role.COLLABORATOR)).toBe(403);
@@ -205,7 +197,10 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
 
   it('PATCH /tasks/:id/move — any authenticated role reaches the service', async () => {
     // No @Roles decorator; gating lives in the service layer.
-    const body = { columnId: '22222222-2222-4222-8222-222222222222', position: 0 };
+    const body = {
+      columnId: '22222222-2222-4222-8222-222222222222',
+      position: 0,
+    };
     expect(
       await status('patch', '/tasks/t1/move', Role.PROJECT_MANAGER, body),
     ).toBe(200);
@@ -221,9 +216,9 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
     expect(
       await status('post', '/tasks/t1/assignees', Role.PROJECT_MANAGER, body),
     ).toBe(201);
-    expect(
-      await status('post', '/tasks/t1/assignees', Role.OWNER, body),
-    ).toBe(201);
+    expect(await status('post', '/tasks/t1/assignees', Role.OWNER, body)).toBe(
+      201,
+    );
     expect(
       await status('post', '/tasks/t1/assignees', Role.COLLABORATOR, body),
     ).toBe(403);
@@ -249,15 +244,13 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
   // ─── Labels ──────────────────────────────────────────────────────────────────
 
   it('GET /projects/:id/labels — any authenticated role allowed', async () => {
-    expect(
-      await status('get', '/projects/p1/labels', Role.OWNER),
-    ).toBe(200);
+    expect(await status('get', '/projects/p1/labels', Role.OWNER)).toBe(200);
     expect(
       await status('get', '/projects/p1/labels', Role.PROJECT_MANAGER),
     ).toBe(200);
-    expect(
-      await status('get', '/projects/p1/labels', Role.COLLABORATOR),
-    ).toBe(200);
+    expect(await status('get', '/projects/p1/labels', Role.COLLABORATOR)).toBe(
+      200,
+    );
   });
 
   it('POST /projects/:id/labels — PM/Owner allowed, ADMIN/COLLABORATOR forbidden', async () => {
@@ -265,12 +258,12 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
     expect(
       await status('post', '/projects/p1/labels', Role.PROJECT_MANAGER, body),
     ).toBe(201);
-    expect(
-      await status('post', '/projects/p1/labels', Role.OWNER, body),
-    ).toBe(201);
-    expect(
-      await status('post', '/projects/p1/labels', Role.ADMIN, body),
-    ).toBe(403);
+    expect(await status('post', '/projects/p1/labels', Role.OWNER, body)).toBe(
+      201,
+    );
+    expect(await status('post', '/projects/p1/labels', Role.ADMIN, body)).toBe(
+      403,
+    );
     expect(
       await status('post', '/projects/p1/labels', Role.COLLABORATOR, body),
     ).toBe(403);
@@ -283,15 +276,15 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
     ).toBe(200);
     expect(await status('patch', '/labels/l1', Role.OWNER, body)).toBe(200);
     expect(await status('patch', '/labels/l1', Role.ADMIN, body)).toBe(403);
-    expect(
-      await status('patch', '/labels/l1', Role.COLLABORATOR, body),
-    ).toBe(403);
+    expect(await status('patch', '/labels/l1', Role.COLLABORATOR, body)).toBe(
+      403,
+    );
   });
 
   it('DELETE /labels/:id — PM/Owner allowed, ADMIN/COLLABORATOR forbidden', async () => {
-    expect(
-      await status('delete', '/labels/l1', Role.PROJECT_MANAGER),
-    ).toBe(204);
+    expect(await status('delete', '/labels/l1', Role.PROJECT_MANAGER)).toBe(
+      204,
+    );
     expect(await status('delete', '/labels/l1', Role.OWNER)).toBe(204);
     expect(await status('delete', '/labels/l1', Role.ADMIN)).toBe(403);
     expect(await status('delete', '/labels/l1', Role.COLLABORATOR)).toBe(403);
@@ -302,9 +295,9 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
     expect(
       await status('post', '/tasks/t1/labels', Role.PROJECT_MANAGER, body),
     ).toBe(201);
-    expect(
-      await status('post', '/tasks/t1/labels', Role.OWNER, body),
-    ).toBe(201);
+    expect(await status('post', '/tasks/t1/labels', Role.OWNER, body)).toBe(
+      201,
+    );
     expect(
       await status('post', '/tasks/t1/labels', Role.COLLABORATOR, body),
     ).toBe(403);
@@ -314,9 +307,7 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
     expect(
       await status('delete', '/tasks/t1/labels/l1', Role.PROJECT_MANAGER),
     ).toBe(204);
-    expect(
-      await status('delete', '/tasks/t1/labels/l1', Role.OWNER),
-    ).toBe(204);
+    expect(await status('delete', '/tasks/t1/labels/l1', Role.OWNER)).toBe(204);
     expect(
       await status('delete', '/tasks/t1/labels/l1', Role.COLLABORATOR),
     ).toBe(403);
@@ -327,16 +318,11 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
   it('POST /tasks/:taskId/checklist — PM/Owner allowed, COLLABORATOR forbidden', async () => {
     const body = { text: 'Write tests' };
     expect(
-      await status(
-        'post',
-        '/tasks/t1/checklist',
-        Role.PROJECT_MANAGER,
-        body,
-      ),
+      await status('post', '/tasks/t1/checklist', Role.PROJECT_MANAGER, body),
     ).toBe(201);
-    expect(
-      await status('post', '/tasks/t1/checklist', Role.OWNER, body),
-    ).toBe(201);
+    expect(await status('post', '/tasks/t1/checklist', Role.OWNER, body)).toBe(
+      201,
+    );
     expect(
       await status('post', '/tasks/t1/checklist', Role.COLLABORATOR, body),
     ).toBe(403);
@@ -354,12 +340,12 @@ describe('Phase 5 Tasks RBAC matrix (e2e)', () => {
   });
 
   it('DELETE /checklist/:id — PM/Owner allowed, COLLABORATOR forbidden', async () => {
-    expect(
-      await status('delete', '/checklist/ci1', Role.PROJECT_MANAGER),
-    ).toBe(204);
+    expect(await status('delete', '/checklist/ci1', Role.PROJECT_MANAGER)).toBe(
+      204,
+    );
     expect(await status('delete', '/checklist/ci1', Role.OWNER)).toBe(204);
-    expect(
-      await status('delete', '/checklist/ci1', Role.COLLABORATOR),
-    ).toBe(403);
+    expect(await status('delete', '/checklist/ci1', Role.COLLABORATOR)).toBe(
+      403,
+    );
   });
 });

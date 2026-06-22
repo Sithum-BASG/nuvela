@@ -13,6 +13,11 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { TransferProjectDto } from './dto/transfer-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 
+export type ProjectMemberPreview = {
+  userId: string;
+  name: string;
+};
+
 export type ProjectRow = {
   id: string;
   organizationId: string;
@@ -22,6 +27,9 @@ export type ProjectRow = {
   status: ProjectStatus;
   managerId: string;
   memberCount: number;
+  totalTasks: number;
+  completedTasks: number;
+  memberPreview: ProjectMemberPreview[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -79,7 +87,7 @@ export class ProjectsService {
         select: PROJECT_SELECT,
         orderBy: { createdAt: 'desc' },
       });
-      return rows.map(toProjectRow);
+      return this.enrichProjectRows(rows);
     }
 
     if (caller.role === Role.PROJECT_MANAGER) {
@@ -88,7 +96,7 @@ export class ProjectsService {
         select: PROJECT_SELECT,
         orderBy: { createdAt: 'desc' },
       });
-      return rows.map(toProjectRow);
+      return this.enrichProjectRows(rows);
     }
 
     // COLLABORATOR: only projects they are a member of.
@@ -97,7 +105,7 @@ export class ProjectsService {
       select: PROJECT_SELECT,
       orderBy: { createdAt: 'desc' },
     });
-    return rows.map(toProjectRow);
+    return this.enrichProjectRows(rows);
   }
 
   async listArchivedProjects(
@@ -114,7 +122,7 @@ export class ProjectsService {
         select: PROJECT_SELECT,
         orderBy: { updatedAt: 'desc' },
       });
-      return rows.map(toProjectRow);
+      return this.enrichProjectRows(rows);
     }
 
     if (caller.role === Role.PROJECT_MANAGER) {
@@ -123,7 +131,7 @@ export class ProjectsService {
         select: PROJECT_SELECT,
         orderBy: { updatedAt: 'desc' },
       });
-      return rows.map(toProjectRow);
+      return this.enrichProjectRows(rows);
     }
 
     // Collaborators and Admins don't have an archived list (App Flow §nav).
@@ -337,11 +345,84 @@ export class ProjectsService {
       });
     }
   }
+
+  // List screens show task totals and a member avatar preview (Figma Project
+  // List Row + Project Card). Single-project endpoints omit this enrichment.
+  private async enrichProjectRows(
+    rows: ProjectWithCount[],
+  ): Promise<ProjectRow[]> {
+    if (rows.length === 0) {
+      return [];
+    }
+
+    const projectIds = rows.map((row) => row.id);
+
+    const [totalCounts, completedCounts, members] = await Promise.all([
+      this.prisma.task.groupBy({
+        by: ['projectId'],
+        where: { projectId: { in: projectIds } },
+        _count: { id: true },
+      }),
+      this.prisma.task.groupBy({
+        by: ['projectId'],
+        where: {
+          projectId: { in: projectIds },
+          column: { isCompletedColumn: true },
+        },
+        _count: { id: true },
+      }),
+      this.prisma.projectMember.findMany({
+        where: { projectId: { in: projectIds } },
+        select: {
+          projectId: true,
+          user: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    const totalByProject = new Map(
+      totalCounts.map((row) => [row.projectId, row._count.id]),
+    );
+    const completedByProject = new Map(
+      completedCounts.map((row) => [row.projectId, row._count.id]),
+    );
+
+    const previewByProject = new Map<string, ProjectMemberPreview[]>();
+    for (const member of members) {
+      const preview = previewByProject.get(member.projectId) ?? [];
+      if (preview.length < 3) {
+        preview.push({ userId: member.user.id, name: member.user.name });
+        previewByProject.set(member.projectId, preview);
+      }
+    }
+
+    return rows.map((project) =>
+      toProjectRow(project, {
+        totalTasks: totalByProject.get(project.id) ?? 0,
+        completedTasks: completedByProject.get(project.id) ?? 0,
+        memberPreview: previewByProject.get(project.id) ?? [],
+      }),
+    );
+  }
 }
 
-function toProjectRow(project: ProjectWithCount): ProjectRow {
+function toProjectRow(
+  project: ProjectWithCount,
+  stats?: {
+    totalTasks: number;
+    completedTasks: number;
+    memberPreview: ProjectMemberPreview[];
+  },
+): ProjectRow {
   const { _count, ...rest } = project;
-  return { ...rest, memberCount: _count.members };
+  return {
+    ...rest,
+    memberCount: _count.members,
+    totalTasks: stats?.totalTasks ?? 0,
+    completedTasks: stats?.completedTasks ?? 0,
+    memberPreview: stats?.memberPreview ?? [],
+  };
 }
 
 function notFound(): NotFoundException {

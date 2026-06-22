@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -8,7 +8,6 @@ import {
   Trash2,
   Check,
   Plus,
-  Pencil,
 } from "lucide-react";
 import { format, isBefore, startOfDay } from "date-fns";
 
@@ -16,6 +15,8 @@ import { tasksApi } from "@/lib/tasks-api";
 import type { TaskRow, ChecklistItemRow } from "@/lib/tasks-api.types";
 import { cn } from "@/lib/utils";
 import { LabelManager } from "./label-manager";
+import { TaskDueDateField } from "./task-due-date-field";
+import { TaskAssigneePicker } from "./task-assignee-picker";
 import { CommentThread } from "./comment-thread";
 import { AttachmentSection } from "./attachment-section";
 import { ActivityTimeline } from "./activity-timeline";
@@ -287,24 +288,19 @@ export function TaskDetailPanel({
                     </p>
                   </section>
 
-                  {/* Due date field row */}
-                  {task.dueDate && (
-                    <div className="flex items-center gap-3 rounded-control bg-surface-muted px-2.5 py-2">
-                      <span className="w-[110px] shrink-0 text-[13px] text-text-muted">
-                        Due date
-                      </span>
-                      <span className="flex-1 text-[13px] font-medium text-foreground">
-                        {format(new Date(task.dueDate), "MMM d, yyyy")}
-                      </span>
-                      {isPm && (
-                        <Pencil
-                          className="size-3.5 shrink-0 text-text-muted"
-                          strokeWidth={2}
-                          aria-hidden
-                        />
-                      )}
-                    </div>
-                  )}
+                  {/* Due date */}
+                  <TaskDueDateField
+                    task={task}
+                    isPm={isPm}
+                    onUpdated={onUpdated}
+                  />
+
+                  {/* Assignees */}
+                  <TaskAssigneePicker
+                    task={task}
+                    isPm={isPm}
+                    onUpdated={onUpdated}
+                  />
 
                   {/* Labels */}
                   <section className="flex flex-col gap-2">

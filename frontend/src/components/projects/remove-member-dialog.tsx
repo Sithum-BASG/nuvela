@@ -114,7 +114,7 @@ export function RemoveMemberDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && !loading && onClose()}>
-      <DialogContent className="w-[540px] gap-0 rounded-[14px] p-0 shadow-[0px_1px_2px_rgba(0,0,0,0.05),0px_12px_16px_rgba(0,0,0,0.10)]">
+      <DialogContent showCloseButton={false} className="w-[540px] gap-0 rounded-[14px] p-0 shadow-[0px_1px_2px_rgba(0,0,0,0.05),0px_12px_16px_rgba(0,0,0,0.10)]">
         {/* Header */}
         <div className="flex items-start justify-between px-6 pb-0 pt-6">
           <div className="flex flex-col gap-1">

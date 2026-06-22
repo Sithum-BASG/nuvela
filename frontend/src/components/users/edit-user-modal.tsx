@@ -27,19 +27,19 @@ import type { OrgUser, UserRole } from "@/lib/users-api.types";
 
 // OWNER role is never assignable via this form — only one owner per org and
 // transfers happen through org-settings, not here.
-const ROLE_OPTIONS = [
-  { value: "ADMIN", label: "Admin" },
+const BASE_ROLE_OPTIONS = [
   { value: "PROJECT_MANAGER", label: "Project Manager" },
   { value: "COLLABORATOR", label: "Collaborator" },
 ] as const;
 
 type Props = {
   user: OrgUser | null;
+  actorRole?: UserRole;
   onClose: () => void;
   onUpdated: (user: OrgUser) => void;
 };
 
-export function EditUserModal({ user, onClose, onUpdated }: Props) {
+export function EditUserModal({ user, actorRole, onClose, onUpdated }: Props) {
   const [name, setName] = useState("");
   const [role, setRole] = useState<UserRole | "">("");
   const [loading, setLoading] = useState(false);
@@ -85,10 +85,14 @@ export function EditUserModal({ user, onClose, onUpdated }: Props) {
   }
 
   const isOwner = user?.role === "OWNER";
+  const roleOptions =
+    actorRole === "OWNER"
+      ? [{ value: "ADMIN" as const, label: "Admin" }, ...BASE_ROLE_OPTIONS]
+      : [...BASE_ROLE_OPTIONS];
 
   return (
     <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="w-[440px] gap-0 rounded-[14px] p-0 shadow-[0px_1px_2px_rgba(0,0,0,0.05),0px_12px_16px_rgba(0,0,0,0.10)]">
+      <DialogContent showCloseButton={false} className="w-[440px] gap-0 rounded-[14px] p-0 shadow-[0px_1px_2px_rgba(0,0,0,0.05),0px_12px_16px_rgba(0,0,0,0.10)]">
         <form onSubmit={handleSubmit} noValidate>
           {/* Header */}
           <div className="flex items-start justify-between px-6 pb-5 pt-6">
@@ -162,7 +166,7 @@ export function EditUserModal({ user, onClose, onUpdated }: Props) {
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ROLE_OPTIONS.map((o) => (
+                    {roleOptions.map((o) => (
                       <SelectItem key={o.value} value={o.value}>
                         {o.label}
                       </SelectItem>

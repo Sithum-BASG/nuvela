@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 
+import { ShaderBackground } from "@/components/ui/shader-background";
 import { LogoSymbol } from "@/components/logo";
 import { cn } from "@/lib/utils";
 
@@ -9,8 +10,9 @@ import { cn } from "@/lib/utils";
 // on the app background.
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      {children}
+    <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
+      <ShaderBackground />
+      <div className="relative z-10 flex w-full justify-center">{children}</div>
     </main>
   );
 }

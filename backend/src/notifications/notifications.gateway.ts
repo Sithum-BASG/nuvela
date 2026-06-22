@@ -8,6 +8,7 @@ import {
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
 import type { AuthTokenPayload } from '../auth/token.service';
+import { parseFrontendOrigins } from '../common/frontend-origins';
 import { parseAccessTokenFromCookie } from './ws-auth.util';
 
 type NotificationSocket = Socket & {
@@ -16,7 +17,7 @@ type NotificationSocket = Socket & {
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    origin: parseFrontendOrigins(),
     credentials: true,
   },
 })

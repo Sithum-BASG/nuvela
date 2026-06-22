@@ -125,6 +125,8 @@ export function KanbanBoard({
     // Determine target column: over a task → use that task's column; over a column → use column id
     const overTask = tasks.find((t) => t.id === over.id);
     const targetColumnId = overTask ? overTask.columnId : (over.id as string);
+    const targetColumn = columns.find((c) => c.id === targetColumnId);
+    if (targetColumn?.isPmGated && !isPm) return;
     if (targetColumnId === activeTaskItem.columnId) return;
 
     // Optimistic column switch for smooth visual feedback
@@ -150,6 +152,12 @@ export function KanbanBoard({
       ? overTask.columnId
       : (over.id as string);
 
+    const targetColumn = columns.find((c) => c.id === targetColumnId);
+    if (targetColumn?.isPmGated && !isPm) {
+      toast.error("Only the PM can complete tasks.");
+      return;
+    }
+
     // Compute target position
     const columnTasks = tasks
       .filter((t) => t.id !== activeTaskItem.id && t.columnId === targetColumnId)
@@ -159,6 +167,14 @@ export function KanbanBoard({
     if (overTask && overTask.id !== activeTaskItem.id) {
       const overIdx = columnTasks.findIndex((t) => t.id === overTask.id);
       targetPosition = overIdx >= 0 ? overIdx : columnTasks.length;
+    }
+
+    if (activeTaskItem.columnId === targetColumnId) {
+      const currentColumn = tasks
+        .filter((t) => t.columnId === targetColumnId)
+        .sort((a, b) => a.position - b.position);
+      const currentIdx = currentColumn.findIndex((t) => t.id === activeTaskItem.id);
+      if (currentIdx === targetPosition) return;
     }
 
     // Optimistic update: immediately show new state in UI
@@ -322,32 +338,22 @@ function applyMoveLocally(
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return tasks;
 
-  // Remove from source, renumber
-  const sourceColumn = tasks
-    .filter((t) => t.id !== taskId && t.columnId === task.columnId)
-    .sort((a, b) => a.position - b.position)
-    .map((t, i) => ({ ...t, position: i }));
-
-  // Insert into target at position, renumber
-  const targetColumn = tasks
-    .filter((t) => t.id !== taskId && t.columnId === targetColumnId)
+  const otherTasks = tasks.filter((t) => t.columnId !== targetColumnId);
+  const columnTasks = tasks
+    .filter((t) => t.columnId === targetColumnId)
     .sort((a, b) => a.position - b.position);
+  const withoutMoved = columnTasks.filter((t) => t.id !== taskId);
+  const clampedPosition = Math.min(
+    Math.max(0, targetPosition),
+    withoutMoved.length,
+  );
 
-  targetColumn.splice(targetPosition, 0, {
+  withoutMoved.splice(clampedPosition, 0, {
     ...task,
     columnId: targetColumnId,
-    position: targetPosition,
+    position: clampedPosition,
   });
-  const reNumberedTarget = targetColumn.map((t, i) => ({ ...t, position: i }));
 
-  // Merge: keep all other tasks, replace source + target column tasks
-  return tasks
-    .filter(
-      (t) =>
-        t.id !== taskId &&
-        t.columnId !== task.columnId &&
-        t.columnId !== targetColumnId,
-    )
-    .concat(sourceColumn)
-    .concat(reNumberedTarget);
+  const reordered = withoutMoved.map((t, i) => ({ ...t, position: i }));
+  return otherTasks.concat(reordered);
 }

@@ -57,6 +57,17 @@ export type TaskRow = {
   updatedAt: Date;
 };
 
+export type ChecklistItemRow = {
+  id: string;
+  text: string;
+  isChecked: boolean;
+  position: number;
+};
+
+export type TaskDetailRow = TaskRow & {
+  checklist: ChecklistItemRow[];
+};
+
 const TASK_SELECT = {
   id: true,
   projectId: true,
@@ -132,15 +143,25 @@ export class TasksService {
     return tasks.map(toTaskRow);
   }
 
-  async getTask(caller: CurrentUserPayload, taskId: string): Promise<TaskRow> {
+  async getTask(
+    caller: CurrentUserPayload,
+    taskId: string,
+  ): Promise<TaskDetailRow> {
     const task = await this.prisma.task.findFirst({
       where: { id: taskId, organizationId: caller.organizationId },
-      select: { ...TASK_SELECT, projectId: true },
+      select: {
+        ...TASK_SELECT,
+        projectId: true,
+        checklist: {
+          select: { id: true, text: true, isChecked: true, position: true },
+          orderBy: { position: 'asc' },
+        },
+      },
     });
     if (!task) throw notFound();
     // Enforce project read access (member/PM/Owner; ADMIN/non-member → 404)
     await this.findAccessibleProject(caller, task.projectId);
-    return toTaskRow(task);
+    return toTaskDetailRow(task);
   }
 
   async createTask(
@@ -673,6 +694,17 @@ type RawTask = {
   _count: { checklist: number };
   checklist: { isChecked: boolean }[];
 };
+
+type RawTaskDetail = RawTask & {
+  checklist: ChecklistItemRow[];
+};
+
+function toTaskDetailRow(raw: RawTaskDetail): TaskDetailRow {
+  return {
+    ...toTaskRow(raw),
+    checklist: raw.checklist,
+  };
+}
 
 function toTaskRow(raw: RawTask): TaskRow {
   return {

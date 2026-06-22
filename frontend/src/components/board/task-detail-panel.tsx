@@ -82,12 +82,11 @@ export function TaskDetailPanel({
     tasksApi.tasks
       .get(task.id)
       .then((full) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setChecklist((full as any).checklist ?? []);
+        setChecklist(full.checklist);
       })
       .catch(() => toast.error("Failed to load checklist."))
       .finally(() => setLoadingChecklist(false));
-  }, [task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [task?.id, task?.checklistTotal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function saveTitle() {
     if (!task || titleDraft.trim() === task.title) {

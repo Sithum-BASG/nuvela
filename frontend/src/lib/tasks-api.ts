@@ -2,6 +2,7 @@ import { apiFetch } from "./api-client";
 import type {
   ColumnRow,
   TaskRow,
+  TaskDetailRow,
   ChecklistItemRow,
   LabelRow,
   CreateTaskInput,
@@ -22,7 +23,7 @@ export const tasksApi = {
   tasks: {
     list: (projectId: string) =>
       apiFetch<TaskRow[]>(`/projects/${projectId}/tasks`),
-    get: (taskId: string) => apiFetch<TaskRow>(`/tasks/${taskId}`),
+    get: (taskId: string) => apiFetch<TaskDetailRow>(`/tasks/${taskId}`),
     create: (projectId: string, input: CreateTaskInput) =>
       apiFetch<TaskRow>(`/projects/${projectId}/tasks`, "POST", input),
     update: (taskId: string, input: UpdateTaskInput) =>

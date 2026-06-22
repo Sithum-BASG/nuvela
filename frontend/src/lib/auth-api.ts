@@ -3,6 +3,7 @@
 // silent /auth/refresh and retries once, per the App Flow's silent-refresh rule.
 import { getFriendlyErrorMessage } from "@/lib/error-messages";
 import { redirectSessionExpired } from "@/lib/session-expired";
+import { isLoggingOut } from "@/lib/session-state";
 
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
 
@@ -74,7 +75,7 @@ async function request<T>(
 ): Promise<T> {
   let res = await rawFetch(path, method, body);
 
-  if (res.status === 401 && !NO_REFRESH.has(path)) {
+  if (res.status === 401 && !NO_REFRESH.has(path) && !isLoggingOut()) {
     const refreshed = await rawFetch("/auth/refresh", "POST");
     if (refreshed.ok) {
       res = await rawFetch(path, method, body);
@@ -84,7 +85,7 @@ async function request<T>(
     }
   }
 
-  if (res.status === 401 && !NO_REFRESH.has(path)) {
+  if (res.status === 401 && !NO_REFRESH.has(path) && !isLoggingOut()) {
     redirectSessionExpired();
   }
 
@@ -117,17 +118,8 @@ export const authApi = {
   login: (input: { email: string; password: string }) =>
     request<LoginResult>("/auth/login", "POST", input),
 
-  // Best-effort server logout (revoke refresh + clear cookies). Never blocks UI;
-  // retries once after refresh when the access token has expired.
-  logout: async () => {
-    let res = await rawFetch("/auth/logout", "POST");
-    if (res.status === 401) {
-      const refreshed = await rawFetch("/auth/refresh", "POST");
-      if (refreshed.ok) {
-        await rawFetch("/auth/logout", "POST");
-      }
-    }
-  },
+  // Public endpoint — revokes refresh when present and always clears cookies.
+  logout: () => rawFetch("/auth/logout", "POST"),
 
   refresh: () => request<void>("/auth/refresh", "POST"),
 

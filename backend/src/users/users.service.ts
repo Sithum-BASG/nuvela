@@ -70,11 +70,17 @@ export class UsersService {
     actorRole: Role,
     dto: CreateUserDto,
   ): Promise<UserRow> {
-    void actorRole;
-    if (dto.role === Role.OWNER || dto.role === Role.ADMIN) {
+    if (dto.role === Role.OWNER) {
       throw new ForbiddenException({
         code: 'CANNOT_CREATE_ROLE',
         message: 'Cannot create users with this role here.',
+      });
+    }
+
+    if (dto.role === Role.ADMIN && actorRole !== Role.OWNER) {
+      throw new ForbiddenException({
+        code: 'CANNOT_CREATE_ROLE',
+        message: 'Only Owners can create users with Admin role.',
       });
     }
 
@@ -102,6 +108,7 @@ export class UsersService {
         passwordHash: await hashPassword(tempPassword),
         role: dto.role,
         status: UserStatus.PENDING,
+        emailVerified: true,
         mustResetPassword: true,
         tempPasswordExpiresAt: inviteExpiry(),
       },
@@ -268,6 +275,7 @@ export class UsersService {
       data: {
         passwordHash: await hashPassword(tempPassword),
         mustResetPassword: true,
+        emailVerified: true,
         tempPasswordExpiresAt: inviteExpiry(),
         status: UserStatus.PENDING,
       },

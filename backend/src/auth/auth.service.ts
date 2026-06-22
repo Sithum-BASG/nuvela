@@ -286,16 +286,18 @@ export class AuthService {
     return this.tokenService.rotateRefreshToken(payload.sub, rawRefresh);
   }
 
-  async logout(
-    user: AuthenticatedUser,
-    rawRefresh: string | undefined,
-  ): Promise<void> {
-    if (rawRefresh) {
-      await this.tokenService.revokeRefreshToken(user.userId, rawRefresh);
+  async logoutFromCookies(rawRefresh: string | undefined): Promise<void> {
+    if (!rawRefresh) {
       return;
     }
 
-    await this.tokenService.revokeAllForUser(user.userId);
+    const userId =
+      await this.tokenService.tryResolveUserIdFromRefresh(rawRefresh);
+    if (!userId) {
+      return;
+    }
+
+    await this.tokenService.revokeRefreshToken(userId, rawRefresh);
   }
 
   async firstLoginResetPassword(
@@ -320,6 +322,7 @@ export class AuthService {
         passwordHash: await hashPassword(dto.newPassword),
         mustResetPassword: false,
         tempPasswordExpiresAt: null,
+        status: UserStatus.ACTIVE,
       },
     });
   }

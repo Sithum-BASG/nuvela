@@ -5,6 +5,7 @@
 // branch on status (409, 404) and the backend's `code` field.
 import { getFriendlyErrorMessage } from "@/lib/error-messages";
 import { redirectSessionExpired } from "@/lib/session-expired";
+import { isLoggingOut } from "@/lib/session-state";
 
 const BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
 
@@ -61,7 +62,7 @@ export async function apiFetch<T>(
 ): Promise<T> {
   let res = await rawFetch(path, method, body);
 
-  if (res.status === 401 && !NO_REFRESH.has(path)) {
+  if (res.status === 401 && !NO_REFRESH.has(path) && !isLoggingOut()) {
     const refreshed = await rawFetch("/auth/refresh", "POST");
     if (refreshed.ok) {
       res = await rawFetch(path, method, body);
@@ -71,7 +72,7 @@ export async function apiFetch<T>(
     }
   }
 
-  if (res.status === 401 && !NO_REFRESH.has(path)) {
+  if (res.status === 401 && !NO_REFRESH.has(path) && !isLoggingOut()) {
     redirectSessionExpired();
   }
 

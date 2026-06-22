@@ -1,5 +1,20 @@
 import type { NextConfig } from "next";
 
+function siteOrigin(): string {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL;
+  if (configured) {
+    try {
+      return new URL(configured).origin;
+    } catch {
+      // fall through to deployment defaults
+    }
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return "https://nuvela.space";
+}
+
 function backendOrigins(): { http: string; ws: string } {
   const raw = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
   try {
@@ -32,6 +47,8 @@ function buildContentSecurityPolicy(): string {
 }
 
 const securityHeaders = [
+  // Vercel defaults static assets to ACAO:* — restrict to this deploy origin (ZAP cross-domain).
+  { key: "Access-Control-Allow-Origin", value: siteOrigin() },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

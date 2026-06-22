@@ -10,6 +10,7 @@ import {
   Building2,
   Bell,
   Search,
+  LogOut,
   type LucideIcon,
 } from "lucide-react";
 
@@ -51,7 +52,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   if (!user) return null;
 
@@ -104,29 +105,45 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="flex-1" />
 
-      <Link
-        href="/settings/account"
-        onClick={onNavigate}
-        className="flex items-center gap-2.5 border-t border-sidebar-border pl-2 pt-3.5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
-        <span
+      <div className="flex flex-col gap-1 border-t border-sidebar-border pt-3.5">
+        <Link
+          href="/settings/account"
+          onClick={onNavigate}
           className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-full text-[13px] font-medium text-white",
-            avatarColor(user.name),
+            "flex items-center gap-2.5 rounded-control pl-2 py-1 outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+            pathname.startsWith("/settings/account") && "bg-sidebar-accent",
           )}
-          aria-hidden
         >
-          {initials(user.name)}
-        </span>
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-[13px] font-medium text-sidebar-foreground">
-            {user.name}
+          <span
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-full text-[13px] font-medium text-white",
+              avatarColor(user.name),
+            )}
+            aria-hidden
+          >
+            {initials(user.name)}
           </span>
-          <span className="truncate text-xs text-text-muted">
-            {ROLE_LABEL[user.role] ?? user.role}
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-[13px] font-medium text-sidebar-foreground">
+              {user.name}
+            </span>
+            <span className="truncate text-xs text-text-muted">
+              {ROLE_LABEL[user.role] ?? user.role}
+            </span>
           </span>
-        </span>
-      </Link>
+        </Link>
+        <button
+          type="button"
+          onClick={() => {
+            onNavigate?.();
+            void logout();
+          }}
+          className="flex min-h-9 items-center gap-2 rounded-control px-3 text-sm font-normal text-text-secondary outline-none transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+        >
+          <LogOut className="size-[18px] shrink-0" strokeWidth={1.75} aria-hidden />
+          Log out
+        </button>
+      </div>
     </nav>
   );
 }

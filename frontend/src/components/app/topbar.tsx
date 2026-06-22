@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Search, Settings, LogOut } from "lucide-react";
 
 import { useAuth } from "@/providers/auth-provider";
@@ -14,6 +13,7 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
@@ -92,14 +92,16 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
               </span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="flex flex-col gap-0.5 py-1.5">
-                <span className="text-sm font-medium text-foreground">{user.name}</span>
-                <span className="text-xs font-normal text-text-muted">
-                  {ROLE_LABEL[user.role] ?? user.role}
-                </span>
-              </DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="flex flex-col gap-0.5 py-1.5">
+                  <span className="text-sm font-medium text-foreground">{user.name}</span>
+                  <span className="text-xs font-normal text-text-muted">
+                    {ROLE_LABEL[user.role] ?? user.role}
+                  </span>
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem render={<Link href="/settings/account" />}>
+              <DropdownMenuItem onClick={() => router.push("/settings/account")}>
                 <Settings className="size-4" />
                 Account settings
               </DropdownMenuItem>

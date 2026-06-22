@@ -35,7 +35,7 @@ type Body = Record<string, unknown>;
 
 async function rawFetch(
   path: string,
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PATCH",
   body?: Body,
 ): Promise<Response> {
   return fetch(`${BASE}${path}`, {
@@ -47,7 +47,12 @@ async function rawFetch(
 }
 
 // Endpoints where a 401 must NOT trigger a refresh+retry (the 401 is meaningful).
-const NO_REFRESH = new Set(["/auth/login", "/auth/refresh", "/auth/me"]);
+const NO_REFRESH = new Set([
+  "/auth/login",
+  "/auth/refresh",
+  "/auth/me",
+  "/auth/change-password",
+]);
 
 function throwAuthError(
   res: Response,
@@ -63,7 +68,7 @@ function throwAuthError(
 
 async function request<T>(
   path: string,
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PATCH",
   body?: Body,
 ): Promise<T> {
   let res = await rawFetch(path, method, body);
@@ -116,6 +121,12 @@ export const authApi = {
   refresh: () => request<void>("/auth/refresh", "POST"),
 
   me: () => request<SessionUser>("/auth/me", "GET"),
+
+  updateAccount: (input: { name: string }) =>
+    request<SessionUser>("/auth/me", "PATCH", input),
+
+  changePassword: (input: { currentPassword: string; newPassword: string }) =>
+    request<void>("/auth/change-password", "POST", input),
 
   forgotPassword: (email: string) =>
     request<void>("/auth/forgot-password", "POST", { email }),

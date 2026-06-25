@@ -39,6 +39,10 @@ export function AssistantActionCard({
   const isCreateTask = proposal.type === "create_task";
   const Icon = isCreateTask ? Plus : MessageSquarePlus;
   const title = isCreateTask ? "Create task" : "Post comment";
+  const dueDateLabel =
+    isCreateTask && proposal.dueDate
+      ? formatAssistantDueDate(proposal.dueDate)
+      : null;
 
   async function handleConfirm() {
     if (loading) return;
@@ -101,10 +105,10 @@ export function AssistantActionCard({
                   Priority {PRIORITY_LABEL[proposal.priority]}
                 </span>
               ) : null}
-              {proposal.dueDate ? (
+              {dueDateLabel ? (
                 <span className="inline-flex items-center gap-1.5 rounded-badge border border-border bg-background px-2 py-1 text-[12px] font-medium text-text-secondary">
                   <CalendarDays className="size-3.5" strokeWidth={2} aria-hidden />
-                  Due {format(new Date(proposal.dueDate), "MMM d")}
+                  Due {dueDateLabel}
                 </span>
               ) : null}
               {proposal.assigneeIds?.length ? (
@@ -145,4 +149,10 @@ export function AssistantActionCard({
       </div>
     </section>
   );
+}
+
+function formatAssistantDueDate(value: string): string | null {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return format(date, "MMM d");
 }

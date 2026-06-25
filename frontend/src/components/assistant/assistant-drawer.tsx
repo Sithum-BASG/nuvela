@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Bot, Send, X } from "lucide-react";
 
@@ -46,7 +46,10 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
     null,
   );
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const nextId = useRef(0);
   const activeAssistantMessageId = useRef<string | null>(null);
 
@@ -70,19 +73,47 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
   );
   const roleLabel = user ? ROLE_LABEL[user.role] ?? user.role : "Workspace";
 
+  const abortActiveStream = useCallback((): void => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setStreaming(false);
+    activeAssistantMessageId.current = null;
+  }, []);
+
+  const closeDrawer = useCallback((): void => {
+    abortActiveStream();
+    onOpenChange(false);
+  }, [abortActiveStream, onOpenChange]);
+
   useEffect(() => {
-    if (!open) return;
-    inputRef.current?.focus();
+    if (open) {
+      triggerRef.current = document.activeElement as HTMLElement | null;
+      inputRef.current?.focus();
+      return;
+    }
+
+    abortRef.current?.abort();
+    abortRef.current = null;
+    activeAssistantMessageId.current = null;
+    triggerRef.current?.focus();
+    triggerRef.current = null;
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onOpenChange(false);
+      if (event.key === "Escape") {
+        closeDrawer();
+        return;
+      }
+
+      if (event.key === "Tab") {
+        trapFocus(event, panelRef.current);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onOpenChange]);
+  }, [closeDrawer, open]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
@@ -96,6 +127,9 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
     const assistantMessageId = String(nextId.current++);
 
     activeAssistantMessageId.current = assistantMessageId;
+    abortActiveStream();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setMessages((prev) => [
       ...prev,
       { id: userMessageId, role: "user", content: text },
@@ -109,6 +143,8 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
       await streamAssistantChat(
         { message: text, page: pageContext },
         (event) => {
+          if (controller.signal.aborted) return;
+
           if (event.type === "text") {
             const targetId = activeAssistantMessageId.current;
             if (!targetId) return;
@@ -149,10 +185,14 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
             activeAssistantMessageId.current = null;
           }
         },
+        { signal: controller.signal },
       );
     } finally {
-      setStreaming(false);
-      activeAssistantMessageId.current = null;
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setStreaming(false);
+        activeAssistantMessageId.current = null;
+      }
     }
   }
 
@@ -165,19 +205,22 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
           "fixed inset-0 z-[60] bg-[rgba(15,18,26,0.4)] transition-opacity duration-200 motion-reduce:transition-none",
           open ? "opacity-100" : "pointer-events-none opacity-0",
         )}
-        onClick={() => onOpenChange(false)}
+        onClick={closeDrawer}
         aria-hidden
       />
 
       <aside
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Assistant"
+        aria-hidden={!open}
+        inert={!open}
         className={cn(
           "fixed inset-y-0 right-0 z-[70] flex w-full max-w-[440px] flex-col border-l border-border bg-card shadow-[-8px_0_32px_-4px_rgba(0,0,0,0.12)]",
           "max-md:inset-0 max-md:max-w-none max-md:border-l-0",
           "transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
-          open ? "translate-x-0" : "translate-x-full",
+          open ? "translate-x-0" : "pointer-events-none translate-x-full",
         )}
       >
         <header className="flex items-start justify-between gap-4 border-b border-border px-4 py-4">
@@ -197,7 +240,7 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
             type="button"
             variant="ghost"
             size="icon-lg"
-            onClick={() => onOpenChange(false)}
+            onClick={closeDrawer}
             aria-label="Close assistant"
           >
             <X className="size-4" strokeWidth={2} aria-hidden />
@@ -303,4 +346,48 @@ function extractAssistantRouteContext(pathname: string): {
     projectId,
     taskId,
   };
+}
+
+function trapFocus(event: KeyboardEvent, container: HTMLElement | null): void {
+  if (!container) return;
+
+  const focusable = Array.from(
+    container.querySelectorAll<HTMLElement>(
+      [
+        "a[href]",
+        "button:not([disabled])",
+        "input:not([disabled])",
+        "textarea:not([disabled])",
+        "select:not([disabled])",
+        "[tabindex]:not([tabindex='-1'])",
+      ].join(","),
+    ),
+  ).filter((element) => !element.hasAttribute("aria-hidden"));
+
+  if (focusable.length === 0) {
+    event.preventDefault();
+    container.focus();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const activeElement = document.activeElement;
+
+  if (!container.contains(activeElement)) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+    return;
+  }
+
+  if (event.shiftKey && activeElement === first) {
+    event.preventDefault();
+    last.focus();
+    return;
+  }
+
+  if (!event.shiftKey && activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }

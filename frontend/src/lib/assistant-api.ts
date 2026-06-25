@@ -41,6 +41,7 @@ type AssistantChatInput = {
 export async function streamAssistantChat(
   input: AssistantChatInput,
   onEvent: (event: AssistantStreamEvent) => void,
+  options?: { signal?: AbortSignal },
 ): Promise<void> {
   let response: Response;
 
@@ -50,8 +51,10 @@ export async function streamAssistantChat(
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
+      signal: options?.signal,
     });
   } catch {
+    if (options?.signal?.aborted) return;
     emitRequestError(onEvent);
     return;
   }
@@ -87,6 +90,7 @@ export async function streamAssistantChat(
       await reader.cancel().catch(() => undefined);
     }
   } catch {
+    if (options?.signal?.aborted) return;
     emitRequestError(onEvent);
   }
 }

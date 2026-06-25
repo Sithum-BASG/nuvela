@@ -75,12 +75,17 @@ export async function streamAssistantChat(
       buffer = lines.pop() ?? "";
 
       for (const line of lines) {
-        if (!emitParsedLine(line, onEvent)) return;
+        if (!emitParsedLine(line, onEvent)) {
+          await reader.cancel().catch(() => undefined);
+          return;
+        }
       }
     }
 
     buffer += decoder.decode();
-    if (buffer.trim() && !emitParsedLine(buffer, onEvent)) return;
+    if (buffer.trim() && !emitParsedLine(buffer, onEvent)) {
+      await reader.cancel().catch(() => undefined);
+    }
   } catch {
     emitRequestError(onEvent);
   }
@@ -105,7 +110,12 @@ function emitParsedLine(
   if (!trimmed) return true;
 
   try {
-    onEvent(JSON.parse(trimmed) as AssistantStreamEvent);
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (!isAssistantStreamEvent(parsed)) {
+      emitRequestError(onEvent);
+      return false;
+    }
+    onEvent(parsed);
     return true;
   } catch {
     emitRequestError(onEvent);
@@ -121,4 +131,48 @@ function emitRequestError(
     code: "ASSISTANT_REQUEST_FAILED",
     message: "The assistant could not respond. Please try again.",
   });
+}
+
+function isAssistantStreamEvent(value: unknown): value is AssistantStreamEvent {
+  if (!isRecord(value) || typeof value.type !== "string") return false;
+
+  if (value.type === "text") {
+    return typeof value.content === "string";
+  }
+
+  if (value.type === "action_proposal") {
+    return isAssistantActionProposal(value.proposal);
+  }
+
+  if (value.type === "done") {
+    return true;
+  }
+
+  if (value.type === "error") {
+    return typeof value.code === "string" && typeof value.message === "string";
+  }
+
+  return false;
+}
+
+function isAssistantActionProposal(
+  value: unknown,
+): value is AssistantActionProposal {
+  if (!isRecord(value) || typeof value.type !== "string") return false;
+
+  if (value.type === "create_task") {
+    return (
+      typeof value.projectId === "string" && typeof value.title === "string"
+    );
+  }
+
+  if (value.type === "post_comment") {
+    return typeof value.taskId === "string" && typeof value.body === "string";
+  }
+
+  return false;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }

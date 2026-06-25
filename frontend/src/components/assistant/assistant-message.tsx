@@ -1,4 +1,5 @@
 import { InlineSpinner } from "@/components/ui/inline-spinner";
+import { AssistantMessageContent } from "@/components/assistant/assistant-message-content";
 import { cn } from "@/lib/utils";
 
 export type AssistantMessageRole = "user" | "assistant";
@@ -36,8 +37,10 @@ export function AssistantMessage({
       </span>
       <div
         className={cn(
-          "max-w-[85%] rounded-[10px] border border-border px-3.5 py-2.5 text-[14px] leading-5 text-foreground",
-          isAssistant ? "bg-card" : "bg-accent-tint",
+          "rounded-[12px] border px-3.5 py-3 text-[14px] leading-5 text-foreground",
+          isAssistant
+            ? "w-full border-border/80 bg-surface-muted/60"
+            : "max-w-[85%] border-border bg-accent-tint",
         )}
       >
         {streaming && !trimmed ? (
@@ -45,6 +48,8 @@ export function AssistantMessage({
             <InlineSpinner className="size-3.5" />
             <span className="sr-only">Assistant is responding</span>
           </span>
+        ) : isAssistant ? (
+          <AssistantMessageContent content={content} />
         ) : (
           <p className="whitespace-pre-wrap break-words">{content}</p>
         )}

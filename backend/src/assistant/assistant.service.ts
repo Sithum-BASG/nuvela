@@ -72,6 +72,8 @@ export class AssistantService {
       'Allowed proposals only: create_task or post_comment.',
       'Do not propose or perform any other mutations/actions, including moving tasks, editing fields, inviting users, archiving projects, or changing organization settings.',
       'Answer visibly in normal text first.',
+      'Format answers for readability with short paragraphs and simple Markdown only: **bold labels**, numbered lists for projects, and hyphen bullets for tasks.',
+      'Put each task on its own bullet line; avoid dense comma-separated lists in a single sentence.',
       'If and only if you propose an allowed action, put the machine-readable action in exactly one ACTION_JSON: block at the very end.',
       'The ACTION_JSON: block must contain compact JSON and no prose after it.',
     ].join('\n');

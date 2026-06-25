@@ -32,6 +32,6 @@ import { TasksService } from './tasks.service';
     AttachmentsService,
     ActivityService,
   ],
-  exports: [TasksService],
+  exports: [TasksService, CommentsService],
 })
 export class TasksModule {}

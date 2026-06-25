@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AssistantModule } from './assistant/assistant.module';
 import { AuthModule } from './auth/auth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -35,6 +36,7 @@ import { UsersModule } from './users/users.module';
     SearchModule,
     TasksModule,
     NotificationsModule,
+    AssistantModule,
   ],
   controllers: [AppController],
   providers: [

@@ -126,10 +126,10 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
     const userMessageId = String(nextId.current++);
     const assistantMessageId = String(nextId.current++);
 
-    activeAssistantMessageId.current = assistantMessageId;
     abortActiveStream();
     const controller = new AbortController();
     abortRef.current = controller;
+    activeAssistantMessageId.current = assistantMessageId;
     setMessages((prev) => [
       ...prev,
       { id: userMessageId, role: "user", content: text },

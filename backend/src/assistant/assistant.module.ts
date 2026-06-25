@@ -6,6 +6,7 @@ import { AssistantActionService } from './assistant-action.service';
 import { AssistantContextBuilder } from './assistant-context.builder';
 import { AssistantController } from './assistant.controller';
 import { AssistantModelClient } from './assistant-model.client';
+import { AssistantService } from './assistant.service';
 
 @Module({
   imports: [PrismaModule, TasksModule],
@@ -13,6 +14,7 @@ import { AssistantModelClient } from './assistant-model.client';
   providers: [
     AssistantActionParser,
     AssistantActionService,
+    AssistantService,
     AssistantContextBuilder,
     AssistantModelClient,
   ],

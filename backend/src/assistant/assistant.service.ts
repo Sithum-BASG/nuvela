@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import type { Response } from 'express';
 import type { CurrentUserPayload } from '../common/decorators/current-user.decorator';
 import { AssistantActionParser } from './assistant-action.parser';
@@ -11,6 +11,8 @@ const TEXT_CHUNK_SIZE = 80;
 
 @Injectable()
 export class AssistantService {
+  private readonly logger = new Logger(AssistantService.name);
+
   constructor(
     private readonly contextBuilder: AssistantContextBuilder,
     private readonly modelClient: AssistantModelClient,
@@ -42,11 +44,13 @@ export class AssistantService {
       }
 
       this.writeEvent(response, { type: 'done' });
-    } catch {
+    } catch (error) {
+      this.logger.error('Assistant chat failed', error);
+      const mapped = mapAssistantStreamError(error);
       this.writeEvent(response, {
         type: 'error',
-        code: 'ASSISTANT_FAILED',
-        message: 'The assistant could not respond. Please try again.',
+        code: mapped.code,
+        message: mapped.message,
       });
     } finally {
       response.end();
@@ -96,6 +100,65 @@ function removeActionJsonBlock(output: string): string {
   }
 
   return output.slice(0, index).trimEnd();
+}
+
+function mapAssistantStreamError(error: unknown): {
+  code: string;
+  message: string;
+} {
+  const provider = readStructuredError(error);
+  if (provider) {
+    if (provider.code === 'PROVIDER_NOT_CONFIGURED') {
+      return {
+        code: provider.code,
+        message:
+          'The assistant is not configured on the server. Set NVIDIA_API_KEY in the backend environment and redeploy.',
+      };
+    }
+
+    if (provider.code === 'PROVIDER_TIMEOUT') {
+      return {
+        code: provider.code,
+        message: 'The assistant timed out. Please try again.',
+      };
+    }
+
+    return {
+      code: provider.code,
+      message: 'The assistant could not respond. Please try again.',
+    };
+  }
+
+  return {
+    code: 'ASSISTANT_FAILED',
+    message: 'The assistant could not respond. Please try again.',
+  };
+}
+
+function readStructuredError(
+  error: unknown,
+): { code: string; message: string } | null {
+  if (!(error instanceof InternalServerErrorException)) {
+    return null;
+  }
+
+  const response = error.getResponse();
+  if (
+    typeof response === 'object' &&
+    response !== null &&
+    'code' in response &&
+    typeof response.code === 'string'
+  ) {
+    return {
+      code: response.code,
+      message:
+        'message' in response && typeof response.message === 'string'
+          ? response.message
+          : 'Assistant provider failed.',
+    };
+  }
+
+  return null;
 }
 
 function chunkText(text: string, chunkSize: number): string[] {

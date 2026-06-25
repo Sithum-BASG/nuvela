@@ -36,6 +36,8 @@ const ROLE_LABEL: Record<string, string> = {
   COLLABORATOR: "Collaborator",
 };
 
+const ASSISTANT_REQUEST_TIMEOUT_MS = 35000;
+
 export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -139,6 +141,29 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
     setProposal(null);
     setStreaming(true);
 
+    const timeoutId = window.setTimeout(() => {
+      if (!controller.signal.aborted) {
+        controller.abort();
+        const targetId = activeAssistantMessageId.current;
+        if (targetId) {
+          setMessages((prev) =>
+            prev.map((item) =>
+              item.id === targetId && !item.content.trim()
+                ? {
+                    ...item,
+                    content: "The assistant timed out. Please try again.",
+                  }
+                : item,
+            ),
+          );
+        }
+        setProposal(null);
+        setStreaming(false);
+        activeAssistantMessageId.current = null;
+        abortRef.current = null;
+      }
+    }, ASSISTANT_REQUEST_TIMEOUT_MS);
+
     try {
       await streamAssistantChat(
         { message: text, page: pageContext },
@@ -188,10 +213,25 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
         { signal: controller.signal },
       );
     } finally {
+      window.clearTimeout(timeoutId);
       if (abortRef.current === controller) {
+        const targetId = activeAssistantMessageId.current;
         abortRef.current = null;
         setStreaming(false);
         activeAssistantMessageId.current = null;
+        if (targetId) {
+          setMessages((prev) =>
+            prev.map((item) =>
+              item.id === targetId && !item.content.trim()
+                ? {
+                    ...item,
+                    content:
+                      "The assistant could not respond. Please try again.",
+                  }
+                : item,
+            ),
+          );
+        }
       }
     }
   }

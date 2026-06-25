@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 type NvidiaChatResponse = {
@@ -9,15 +9,17 @@ const ASSISTANT_PROVIDER_TIMEOUT_MS = 30000;
 
 @Injectable()
 export class AssistantModelClient {
+  private readonly logger = new Logger(AssistantModelClient.name);
+
   constructor(private readonly config: ConfigService) {}
 
   async complete(systemPrompt: string, userPrompt: string): Promise<string> {
-    const apiKey = this.config.get<string>('NVIDIA_API_KEY');
+    const apiKey = this.config.get<string>('NVIDIA_API_KEY')?.trim();
     const baseUrl =
       this.config.get<string>('NVIDIA_BASE_URL') ??
       'https://integrate.api.nvidia.com/v1';
     const model =
-      this.config.get<string>('NVIDIA_MODEL') ?? 'deepseek-ai/deepseek-v4-pro';
+      this.config.get<string>('NVIDIA_MODEL') ?? 'deepseek-ai/deepseek-v4-flash';
 
     if (!apiKey) {
       throw new InternalServerErrorException({
@@ -68,6 +70,10 @@ export class AssistantModelClient {
     }
 
     if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      this.logger.error(
+        `NVIDIA chat completion failed (${response.status}): ${detail.slice(0, 500)}`,
+      );
       throw new InternalServerErrorException({
         code: 'PROVIDER_FAILED',
         message: 'Assistant provider failed.',

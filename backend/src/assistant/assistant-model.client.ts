@@ -5,6 +5,8 @@ type NvidiaChatResponse = {
   choices?: { message?: { content?: string } }[];
 };
 
+const ASSISTANT_PROVIDER_TIMEOUT_MS = 30000;
+
 @Injectable()
 export class AssistantModelClient {
   constructor(private readonly config: ConfigService) {}
@@ -24,35 +26,66 @@ export class AssistantModelClient {
       });
     }
 
-    const response = await fetch(
-      `${baseUrl.replace(/\/$/, '')}/chat/completions`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
+    const controller = new AbortController();
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, ASSISTANT_PROVIDER_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(
+        `${baseUrl.replace(/\/$/, '')}/chat/completions`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ],
+            temperature: 0.2,
+          }),
+          signal: controller.signal,
         },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-          temperature: 0.2,
-        }),
-      },
-    );
+      );
+    } catch (error) {
+      if (timedOut || isAbortError(error)) {
+        throw new InternalServerErrorException({
+          code: 'PROVIDER_TIMEOUT',
+          message: 'Assistant provider request timed out.',
+        });
+      }
+
+      throw new InternalServerErrorException({
+        code: 'PROVIDER_REQUEST_FAILED',
+        message: 'Assistant provider request failed.',
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!response.ok) {
-      const detail = await response.text().catch(() => '');
       throw new InternalServerErrorException({
         code: 'PROVIDER_FAILED',
-        message: `Assistant provider failed (${response.status} ${response.statusText}).`,
-        description: detail.slice(0, 500),
+        message: 'Assistant provider failed.',
       });
     }
 
-    const data = (await response.json()) as NvidiaChatResponse;
+    let data: NvidiaChatResponse;
+    try {
+      data = (await response.json()) as NvidiaChatResponse;
+    } catch {
+      throw new InternalServerErrorException({
+        code: 'PROVIDER_INVALID_RESPONSE',
+        message: 'Assistant provider returned an invalid response.',
+      });
+    }
     const content = data.choices?.[0]?.message?.content;
     if (!content) {
       throw new InternalServerErrorException({
@@ -62,4 +95,11 @@ export class AssistantModelClient {
     }
     return content;
   }
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    error instanceof DOMException ||
+    (typeof error === 'object' && error !== null && 'name' in error)
+  ) && (error as { name?: string }).name === 'AbortError';
 }

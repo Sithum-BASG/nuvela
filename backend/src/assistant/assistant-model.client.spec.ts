@@ -14,7 +14,7 @@ describe('AssistantModelClient', () => {
   it('throws PROVIDER_NOT_CONFIGURED when API key is missing', async () => {
     const config = new ConfigService({
       NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
-      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-pro',
+      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-flash',
     });
     const client = new AssistantModelClient(config);
 
@@ -27,7 +27,7 @@ describe('AssistantModelClient', () => {
     const config = new ConfigService({
       NVIDIA_API_KEY: 'key',
       NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
-      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-pro',
+      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-flash',
     });
     const fetchMock = mockFetch();
     fetchMock.mockResolvedValue(
@@ -44,7 +44,7 @@ describe('AssistantModelClient', () => {
     expect(headers['Content-Type']).toBe('application/json');
     const requestBody = parseJsonBody(init);
     expect(requestBody).toEqual({
-      model: 'deepseek-ai/deepseek-v4-pro',
+      model: 'deepseek-ai/deepseek-v4-flash',
       messages: [
         { role: 'system', content: 'system' },
         { role: 'user', content: 'hello' },
@@ -57,7 +57,7 @@ describe('AssistantModelClient', () => {
     const config = new ConfigService({
       NVIDIA_API_KEY: 'key',
       NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
-      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-pro',
+      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-flash',
     });
     const fetchMock = mockFetch();
     fetchMock.mockResolvedValue(
@@ -80,7 +80,7 @@ describe('AssistantModelClient', () => {
     const config = new ConfigService({
       NVIDIA_API_KEY: 'key',
       NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
-      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-pro',
+      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-flash',
     });
     const fetchMock = mockFetch();
     fetchMock.mockRejectedValue(new Error('network down'));
@@ -98,7 +98,7 @@ describe('AssistantModelClient', () => {
     const config = new ConfigService({
       NVIDIA_API_KEY: 'key',
       NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
-      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-pro',
+      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-flash',
     });
     const fetchMock = mockFetch();
     fetchMock.mockResolvedValue(new Response('not-json'));
@@ -117,7 +117,7 @@ describe('AssistantModelClient', () => {
     const config = new ConfigService({
       NVIDIA_API_KEY: 'key',
       NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
-      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-pro',
+      NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-flash',
     });
     const fetchMock = mockFetch();
     fetchMock.mockImplementation((_url, init) => {

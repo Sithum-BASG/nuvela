@@ -17,3 +17,9 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_BASE_URL
+        sync: false
+      - key: NVIDIA_MODEL
+        sync: false

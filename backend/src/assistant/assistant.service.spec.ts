@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import type { Response } from 'express';
 import type { CurrentUserPayload } from '../common/decorators/current-user.decorator';
@@ -160,6 +161,30 @@ describe('AssistantService', () => {
       },
     ]);
     expect(response.end).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps missing provider configuration to a setup message', async () => {
+    modelClient.complete.mockRejectedValue(
+      new InternalServerErrorException({
+        code: 'PROVIDER_NOT_CONFIGURED',
+        message: 'Assistant provider is not configured.',
+      }),
+    );
+
+    await service.streamChat(
+      caller,
+      { message: 'Summarize this.' },
+      response as unknown as Response,
+    );
+
+    expect(writtenEvents(response)).toEqual([
+      {
+        type: 'error',
+        code: 'PROVIDER_NOT_CONFIGURED',
+        message:
+          'The assistant is not configured on the server. Set NVIDIA_API_KEY in the backend environment and redeploy.',
+      },
+    ]);
   });
 });
 

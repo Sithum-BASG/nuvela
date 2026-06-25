@@ -41,7 +41,7 @@ export function TaskAssigneePicker({ task, isPm, onUpdated }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
+    setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- loading flag for fetch-on-open
     projectsApi.members
       .list(task.projectId)
       .then(setMembers)

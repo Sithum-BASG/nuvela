@@ -21,7 +21,6 @@ import { toast } from "sonner";
 import { tasksApi } from "@/lib/tasks-api";
 import type { TaskRow } from "@/lib/tasks-api.types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -54,7 +53,8 @@ export function TaskDueDateField({ task, isPm, onUpdated }: Props) {
   );
 
   useEffect(() => {
-    setDraft(toInputValue(task.dueDate));
+    // Sync editable state when the task's due date changes (e.g. after a save).
+    setDraft(toInputValue(task.dueDate)); // eslint-disable-line react-hooks/set-state-in-effect
     setVisibleMonth(toDateValue(toInputValue(task.dueDate)) ?? new Date());
   }, [task.dueDate]);
 
@@ -71,6 +71,15 @@ export function TaskDueDateField({ task, isPm, onUpdated }: Props) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open, task.dueDate]);
 
+  const calendarDays = useMemo(() => {
+    const monthStart = startOfMonth(visibleMonth);
+    const monthEnd = endOfMonth(visibleMonth);
+    return eachDayOfInterval({
+      start: startOfWeek(monthStart, { weekStartsOn: 0 }),
+      end: endOfWeek(monthEnd, { weekStartsOn: 0 }),
+    });
+  }, [visibleMonth]);
+
   if (!isPm && !task.dueDate) return null;
 
   async function saveDueDate(value: string | null) {
@@ -86,15 +95,6 @@ export function TaskDueDateField({ task, isPm, onUpdated }: Props) {
       setSaving(false);
     }
   }
-
-  const calendarDays = useMemo(() => {
-    const monthStart = startOfMonth(visibleMonth);
-    const monthEnd = endOfMonth(visibleMonth);
-    return eachDayOfInterval({
-      start: startOfWeek(monthStart, { weekStartsOn: 0 }),
-      end: endOfWeek(monthEnd, { weekStartsOn: 0 }),
-    });
-  }, [visibleMonth]);
 
   return (
     <div className="relative" ref={popoverRef}>

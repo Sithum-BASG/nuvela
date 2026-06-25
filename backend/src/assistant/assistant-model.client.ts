@@ -35,25 +35,22 @@ export class AssistantModelClient {
 
     let response: Response;
     try {
-      response = await fetch(
-        `${baseUrl.replace(/\/$/, '')}/chat/completions`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt },
-            ],
-            temperature: 0.2,
-          }),
-          signal: controller.signal,
+      response = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: 0.2,
+        }),
+        signal: controller.signal,
+      });
     } catch (error) {
       if (timedOut || isAbortError(error)) {
         throw new InternalServerErrorException({
@@ -99,7 +96,8 @@ export class AssistantModelClient {
 
 function isAbortError(error: unknown): boolean {
   return (
-    error instanceof DOMException ||
-    (typeof error === 'object' && error !== null && 'name' in error)
-  ) && (error as { name?: string }).name === 'AbortError';
+    (error instanceof DOMException ||
+      (typeof error === 'object' && error !== null && 'name' in error)) &&
+    (error as { name?: string }).name === 'AbortError'
+  );
 }

@@ -47,7 +47,10 @@ export class AssistantActionParser {
     }
 
     if (parsed.type === 'post_comment') {
-      if (typeof parsed.taskId !== 'string' || typeof parsed.body !== 'string') {
+      if (
+        typeof parsed.taskId !== 'string' ||
+        typeof parsed.body !== 'string'
+      ) {
         return null;
       }
       const proposal: AssistantActionProposal = {

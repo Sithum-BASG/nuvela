@@ -1,6 +1,8 @@
 import { ConfigService } from '@nestjs/config';
 import { AssistantModelClient } from './assistant-model.client';
 
+type FetchMock = jest.MockedFunction<typeof fetch>;
+
 describe('AssistantModelClient', () => {
   const originalFetch = global.fetch;
 
@@ -27,28 +29,21 @@ describe('AssistantModelClient', () => {
       NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
       NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-pro',
     });
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ choices: [{ message: { content: 'Hello' } }] }),
-    } as Response);
+    const fetchMock = mockFetch();
+    fetchMock.mockResolvedValue(
+      jsonResponse({ choices: [{ message: { content: 'Hello' } }] }),
+    );
 
     const client = new AssistantModelClient(config);
     await expect(client.complete('system', 'hello')).resolves.toBe('Hello');
-    expect(global.fetch).toHaveBeenCalledWith(
-      'https://integrate.api.nvidia.com/v1/chat/completions',
-      expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({
-          Authorization: 'Bearer key',
-          'Content-Type': 'application/json',
-        }),
-      }),
-    );
-    const [, init] = (global.fetch as jest.Mock).mock.calls[0] as [
-      string,
-      RequestInit,
-    ];
-    expect(JSON.parse(init.body as string)).toEqual({
+    const [url, init] = getLastFetchCall(fetchMock);
+    expect(url).toBe('https://integrate.api.nvidia.com/v1/chat/completions');
+    expect(init.method).toBe('POST');
+    const headers = getFetchHeaders(init);
+    expect(headers.Authorization).toBe('Bearer key');
+    expect(headers['Content-Type']).toBe('application/json');
+    const requestBody = parseJsonBody(init);
+    expect(requestBody).toEqual({
       model: 'deepseek-ai/deepseek-v4-pro',
       messages: [
         { role: 'system', content: 'system' },
@@ -64,23 +59,21 @@ describe('AssistantModelClient', () => {
       NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
       NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-pro',
     });
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: false,
-      status: 429,
-      statusText: 'Too Many Requests',
-      text: async () => 'rate limited',
-    } as Response);
+    const fetchMock = mockFetch();
+    fetchMock.mockResolvedValue(
+      new Response('rate limited', {
+        status: 429,
+        statusText: 'Too Many Requests',
+      }),
+    );
 
     const client = new AssistantModelClient(config);
-    await expect(client.complete('system', 'hello')).rejects.toMatchObject({
-      response: {
-        code: 'PROVIDER_FAILED',
-        message: 'Assistant provider failed.',
-      },
+    const response = await getErrorResponse(client.complete('system', 'hello'));
+    expect(response).toMatchObject({
+      code: 'PROVIDER_FAILED',
+      message: 'Assistant provider failed.',
     });
-    await expect(client.complete('system', 'hello')).rejects.not.toMatchObject({
-      response: { description: expect.any(String) },
-    });
+    expect(response).not.toHaveProperty('description');
   });
 
   it('wraps rejected fetch calls in a structured error', async () => {
@@ -89,7 +82,8 @@ describe('AssistantModelClient', () => {
       NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
       NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-pro',
     });
-    global.fetch = jest.fn().mockRejectedValue(new Error('network down'));
+    const fetchMock = mockFetch();
+    fetchMock.mockRejectedValue(new Error('network down'));
 
     const client = new AssistantModelClient(config);
     await expect(client.complete('system', 'hello')).rejects.toMatchObject({
@@ -106,12 +100,8 @@ describe('AssistantModelClient', () => {
       NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
       NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-pro',
     });
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => {
-        throw new SyntaxError('Unexpected token');
-      },
-    } as unknown as Response);
+    const fetchMock = mockFetch();
+    fetchMock.mockResolvedValue(new Response('not-json'));
 
     const client = new AssistantModelClient(config);
     await expect(client.complete('system', 'hello')).rejects.toMatchObject({
@@ -129,9 +119,14 @@ describe('AssistantModelClient', () => {
       NVIDIA_BASE_URL: 'https://integrate.api.nvidia.com/v1',
       NVIDIA_MODEL: 'deepseek-ai/deepseek-v4-pro',
     });
-    global.fetch = jest.fn().mockImplementation((_url, init: RequestInit) => {
-      const signal = init.signal as AbortSignal;
-      return new Promise((_resolve, reject) => {
+    const fetchMock = mockFetch();
+    fetchMock.mockImplementation((_url, init) => {
+      if (!init?.signal) {
+        return Promise.reject(new Error('Missing abort signal'));
+      }
+
+      const signal = init.signal;
+      return new Promise<Response>((_resolve, reject) => {
         signal.addEventListener('abort', () => {
           reject(new DOMException('The operation was aborted.', 'AbortError'));
         });
@@ -150,3 +145,72 @@ describe('AssistantModelClient', () => {
     });
   });
 });
+
+function mockFetch(): FetchMock {
+  const fetchMock = jest.fn<
+    ReturnType<typeof fetch>,
+    Parameters<typeof fetch>
+  >();
+  global.fetch = fetchMock;
+  return fetchMock;
+}
+
+function jsonResponse(body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function getLastFetchCall(
+  fetchMock: FetchMock,
+): [RequestInfo | URL, RequestInit] {
+  const call = fetchMock.mock.calls[0];
+  if (!call?.[1]) {
+    throw new Error('Expected fetch to be called with options.');
+  }
+  return [call[0], call[1]];
+}
+
+function getFetchHeaders(init: RequestInit): Record<string, unknown> {
+  if (!isRecord(init.headers)) {
+    throw new Error('Expected fetch headers to be a plain object.');
+  }
+  return init.headers;
+}
+
+function parseJsonBody(init: RequestInit): unknown {
+  if (typeof init.body !== 'string') {
+    throw new Error('Expected fetch body to be a string.');
+  }
+  return JSON.parse(init.body) as unknown;
+}
+
+async function getErrorResponse(
+  promise: Promise<unknown>,
+): Promise<Record<string, unknown>> {
+  try {
+    await promise;
+  } catch (error: unknown) {
+    if (!hasGetResponse(error)) {
+      throw error;
+    }
+
+    const response: unknown = error.getResponse();
+    if (!isRecord(response)) {
+      throw error;
+    }
+    return response;
+  }
+
+  throw new Error('Expected promise to reject.');
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function hasGetResponse(
+  value: unknown,
+): value is { getResponse: () => unknown } {
+  return isRecord(value) && typeof value.getResponse === 'function';
+}

@@ -23,7 +23,9 @@ export class AssistantPageContextDto {
   @IsUUID('4')
   projectId?: string;
 
-  @ApiPropertyOptional({ description: 'Current task id, when on a task route.' })
+  @ApiPropertyOptional({
+    description: 'Current task id, when on a task route.',
+  })
   @IsOptional()
   @IsUUID('4')
   taskId?: string;

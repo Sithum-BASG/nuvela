@@ -390,9 +390,17 @@ export function isCreateTaskIntent(message: string): boolean {
 }
 
 export function extractInitialTaskTitle(message: string): string {
-  return message
-    .replace(/\b(please\s+)?(create|add|make|draft)\s+(a\s+)?(new\s+)?task\b/i, "")
-    .replace(/\btask\s+(called|named|titled)\b/i, "")
-    .replace(/^[:\- ]+/, "")
+  const explicitTitle =
+    message.match(/\btask\b[\s\S]*?\b(?:called|named|titled)\s+(.+)$/i)?.[1] ??
+    message.match(/\b(?:called|named|titled)\s+(.+)$/i)?.[1] ??
+    message.match(/\btask\s*[:\-]\s*(.+)$/i)?.[1];
+
+  return cleanInitialTaskTitle(explicitTitle ?? "");
+}
+
+function cleanInitialTaskTitle(value: string): string {
+  return value
+    .trim()
+    .replace(/^["']+|["'.]+$/g, "")
     .trim();
 }

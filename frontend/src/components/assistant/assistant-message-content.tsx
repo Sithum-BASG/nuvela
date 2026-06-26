@@ -25,7 +25,7 @@ export function AssistantMessageContent({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 text-[14px] leading-[1.55] text-foreground [text-wrap:pretty]",
+        "flex max-w-[72ch] flex-col gap-3.5 text-[14px] leading-[1.6] text-foreground [text-wrap:pretty]",
         className,
       )}
     >
@@ -39,7 +39,7 @@ export function AssistantMessageContent({
 function renderBlock(block: ContentBlock, blockIndex: number): ReactNode {
   if (block.type === "paragraph") {
     return (
-      <p className="text-[14px] leading-[1.55] text-foreground">
+      <p className="text-[14px] leading-[1.6] text-foreground">
         {block.lines.map((line, lineIndex) => (
           <Fragment key={lineIndex}>
             {lineIndex > 0 ? <br /> : null}
@@ -53,11 +53,11 @@ function renderBlock(block: ContentBlock, blockIndex: number): ReactNode {
   const ListTag = block.ordered ? "ol" : "ul";
 
   return (
-    <ListTag className="m-0 flex list-none flex-col gap-2.5 p-0">
+    <ListTag className="m-0 flex list-none flex-col gap-3 p-0">
       {block.items.map((item, itemIndex) => (
         <li
           key={itemIndex}
-          className={cn("flex gap-2.5", block.ordered ? "items-start" : "items-start")}
+          className="flex items-start gap-2.5"
         >
           {block.ordered ? (
             <span
@@ -75,7 +75,7 @@ function renderBlock(block: ContentBlock, blockIndex: number): ReactNode {
           <div className="min-w-0 flex-1">
             <div>{renderInline(item.content, `${blockIndex}-li-${itemIndex}`)}</div>
             {item.children.length > 0 ? (
-              <ul className="mt-2 flex flex-col gap-1.5 border-l border-border pl-3">
+              <ul className="mt-2.5 flex flex-col gap-1.5 border-l border-border pl-3">
                 {item.children.map((child, childIndex) => (
                   <li
                     key={childIndex}

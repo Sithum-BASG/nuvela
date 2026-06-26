@@ -7,6 +7,11 @@ import { Bot, Send, X } from "lucide-react";
 import { AssistantActionCard } from "@/components/assistant/assistant-action-card";
 import { AssistantMessage } from "@/components/assistant/assistant-message";
 import { assistantPrompts } from "@/components/assistant/assistant-prompts";
+import {
+  AssistantTaskGuide,
+  extractInitialTaskTitle,
+  isCreateTaskIntent,
+} from "@/components/assistant/assistant-task-guide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InlineSpinner } from "@/components/ui/inline-spinner";
@@ -47,6 +52,10 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
   const [proposal, setProposal] = useState<AssistantActionProposal | null>(
     null,
   );
+  const [taskGuide, setTaskGuide] = useState<{
+    id: string;
+    initialTitle?: string;
+  } | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -119,7 +128,7 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [messages, proposal, streaming]);
+  }, [messages, proposal, streaming, taskGuide]);
 
   async function send(message = input) {
     const text = message.trim();
@@ -127,6 +136,32 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
 
     const userMessageId = String(nextId.current++);
     const assistantMessageId = String(nextId.current++);
+
+    if (isCreateTaskIntent(text)) {
+      abortActiveStream();
+      setInput("");
+      setProposal(null);
+      setMessages((prev) => [
+        ...prev,
+        { id: userMessageId, role: "user", content: text },
+        {
+          id: assistantMessageId,
+          role: "assistant",
+          content: projectId
+            ? "Let's create it step by step. I will ask for the task details first, then show a review card before saving."
+            : "Open a project first, then ask me to create the task from that project.",
+        },
+      ]);
+      setTaskGuide(
+        projectId
+          ? {
+              id: String(nextId.current++),
+              initialTitle: extractInitialTaskTitle(text),
+            }
+          : null,
+      );
+      return;
+    }
 
     abortActiveStream();
     const controller = new AbortController();
@@ -139,6 +174,7 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
     ]);
     setInput("");
     setProposal(null);
+    setTaskGuide(null);
     setStreaming(true);
 
     const timeoutId = window.setTimeout(() => {
@@ -257,8 +293,8 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
         aria-hidden={!open}
         inert={!open}
         className={cn(
-          "fixed inset-y-0 right-0 z-[70] flex w-full max-w-[440px] flex-col border-l border-border bg-card shadow-[-8px_0_32px_-4px_rgba(0,0,0,0.12)]",
-          "max-md:inset-0 max-md:max-w-none max-md:border-l-0",
+          "fixed inset-y-0 right-0 z-[70] flex w-[50vw] min-w-[560px] max-w-[820px] flex-col border-l border-border bg-card shadow-[-8px_0_32px_-4px_rgba(0,0,0,0.12)]",
+          "max-lg:w-[58vw] max-md:inset-0 max-md:w-full max-md:min-w-0 max-md:max-w-none max-md:border-l-0",
           "transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
           open ? "translate-x-0" : "pointer-events-none translate-x-full",
         )}
@@ -287,8 +323,8 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
           </Button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          <div className="mx-auto flex w-full max-w-[392px] flex-col gap-3">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 max-md:px-4">
+          <div className="mx-auto flex w-full max-w-[720px] flex-col gap-4">
             {hasMessages ? (
               messages.map((message, index) => (
                 <AssistantMessage
@@ -304,6 +340,17 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
               ))
             ) : (
               <div className="flex flex-col gap-2.5">
+                {projectId ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-auto min-h-11 w-full justify-start whitespace-normal px-3 py-2.5 text-left leading-5"
+                    onClick={() => void send("Create a task")}
+                  >
+                    Create a task
+                  </Button>
+                ) : null}
                 {starterPrompts.map((prompt) => (
                   <Button
                     key={prompt}
@@ -318,6 +365,28 @@ export function AssistantDrawer({ open, onOpenChange }: AssistantDrawerProps) {
                 ))}
               </div>
             )}
+
+            {taskGuide && projectId ? (
+              <AssistantTaskGuide
+                key={taskGuide.id}
+                projectId={projectId}
+                initialTitle={taskGuide.initialTitle}
+                onCancel={() => setTaskGuide(null)}
+                onProposal={(nextProposal) => {
+                  setTaskGuide(null);
+                  setProposal(nextProposal);
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: String(nextId.current++),
+                      role: "assistant",
+                      content:
+                        "Review the task details below. I will only create it after you confirm.",
+                    },
+                  ]);
+                }}
+              />
+            ) : null}
 
             {proposal ? (
               <AssistantActionCard

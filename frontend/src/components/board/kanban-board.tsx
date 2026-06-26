@@ -54,8 +54,9 @@ export function KanbanBoard({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<LoadErrorKind | null>(null);
 
-  // active drag state
+  // active drag state — boardTasks is a drag-only copy so we never corrupt `tasks` mid-drag
   const [activeTask, setActiveTask] = useState<TaskRow | null>(null);
+  const [boardTasks, setBoardTasks] = useState<TaskRow[] | null>(null);
   const tasksBeforeDragRef = useRef<TaskRow[]>([]);
   // detail panel
   const [selectedTask, setSelectedTask] = useState<TaskRow | null>(null);
@@ -74,7 +75,7 @@ export function KanbanBoard({
         tasksApi.tasks.list(projectId),
       ]);
       setColumns(cols);
-      setTasks(tks);
+      setTasks(dedupeTasks(tks));
     } catch (err) {
       setLoadError(classifyLoadError(err));
     } finally {
@@ -103,16 +104,19 @@ export function KanbanBoard({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const visibleTasks = boardTasks ?? tasks;
+
   function onDragStart(event: DragStartEvent) {
     const task = tasks.find((t) => t.id === event.active.id);
     if (!task) return;
     tasksBeforeDragRef.current = tasks;
+    setBoardTasks(tasks);
     setActiveTask(task);
   }
 
   function onDragCancel() {
     setActiveTask(null);
-    setTasks(tasksBeforeDragRef.current);
+    setBoardTasks(null);
   }
 
   function onDragOver(event: DragOverEvent) {
@@ -121,7 +125,9 @@ export function KanbanBoard({
 
     const activeId = String(active.id);
 
-    setTasks((prev) => {
+    setBoardTasks((prev) => {
+      if (!prev) return prev;
+
       const activeTaskItem = prev.find((t) => t.id === activeId);
       if (!activeTaskItem) return prev;
 
@@ -132,43 +138,46 @@ export function KanbanBoard({
       );
       const targetColumn = columns.find((c) => c.id === targetColumnId);
       if (targetColumn?.isPmGated && !isPm) return prev;
+
+      // Same-column reorder is handled by @dnd-kit/sortable transforms until drop.
       if (activeTaskItem.columnId === targetColumnId) return prev;
 
-      return applyMoveLocally(
+      const next = applyMoveLocally(
         prev,
         activeId,
         targetColumnId,
         targetPosition,
       );
+      return next === prev ? prev : next;
     });
   }
 
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveTask(null);
+
     const snapshot = tasksBeforeDragRef.current;
+    const working = boardTasks ?? tasks;
+    setBoardTasks(null);
 
     if (!over) {
-      setTasks(snapshot);
       return;
     }
 
     const activeId = String(active.id);
     const originalTask = snapshot.find((t) => t.id === activeId);
     if (!originalTask) {
-      setTasks(snapshot);
       return;
     }
 
     const { targetColumnId, targetPosition } = resolveDropTarget(
-      tasks,
+      working,
       activeId,
       over.id,
     );
 
     const targetColumn = columns.find((c) => c.id === targetColumnId);
     if (targetColumn?.isPmGated && !isPm) {
-      setTasks(snapshot);
       toast.error("Only the PM can complete tasks.");
       return;
     }
@@ -177,15 +186,11 @@ export function KanbanBoard({
       originalTask.columnId === targetColumnId &&
       originalTask.position === targetPosition
     ) {
-      setTasks(snapshot);
       return;
     }
 
-    const updatedTasks = applyMoveLocally(
-      tasks,
-      activeId,
-      targetColumnId,
-      targetPosition,
+    const updatedTasks = dedupeTasks(
+      applyMoveLocally(working, activeId, targetColumnId, targetPosition),
     );
     setTasks(updatedTasks);
 
@@ -195,7 +200,7 @@ export function KanbanBoard({
         position: targetPosition,
       });
       setTasks((prev) =>
-        prev.map((t) => (t.id === moved.id ? moved : t)),
+        dedupeTasks(prev.map((t) => (t.id === moved.id ? moved : t))),
       );
     } catch (err) {
       setTasks(snapshot);
@@ -212,12 +217,12 @@ export function KanbanBoard({
   const completedColumnIds = new Set(
     columns.filter((c) => c.isCompletedColumn).map((c) => c.id),
   );
-  const completedCount = tasks.filter((t) =>
+  const completedCount = visibleTasks.filter((t) =>
     completedColumnIds.has(t.columnId),
   ).length;
   const boardSubtitle =
-    tasks.length > 0
-      ? `${completedCount} of ${tasks.length} tasks complete`
+    visibleTasks.length > 0
+      ? `${completedCount} of ${visibleTasks.length} tasks complete`
       : projectDescription ?? undefined;
 
   if (loading) {
@@ -271,7 +276,7 @@ export function KanbanBoard({
             <BoardColumn
               key={col.id}
               column={col}
-              tasks={tasks.filter((t) => t.columnId === col.id)}
+              tasks={visibleTasks.filter((t) => t.columnId === col.id)}
               isPm={isPm}
               isCollaborator={me?.role === "COLLABORATOR"}
               projectId={projectId}
@@ -332,6 +337,14 @@ export function KanbanBoard({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function dedupeTasks(tasks: TaskRow[]): TaskRow[] {
+  const byId = new Map<string, TaskRow>();
+  for (const task of tasks) {
+    byId.set(task.id, task);
+  }
+  return Array.from(byId.values());
+}
+
 function resolveDropTarget(
   tasks: TaskRow[],
   activeId: string,
@@ -362,22 +375,22 @@ function applyMoveLocally(
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return tasks;
 
-  const otherTasks = tasks.filter((t) => t.columnId !== targetColumnId);
-  const columnTasks = tasks
+  const remaining = tasks.filter((t) => t.id !== taskId);
+  const columnTasks = remaining
     .filter((t) => t.columnId === targetColumnId)
     .sort((a, b) => a.position - b.position);
-  const withoutMoved = columnTasks.filter((t) => t.id !== taskId);
   const clampedPosition = Math.min(
     Math.max(0, targetPosition),
-    withoutMoved.length,
+    columnTasks.length,
   );
 
-  withoutMoved.splice(clampedPosition, 0, {
+  columnTasks.splice(clampedPosition, 0, {
     ...task,
     columnId: targetColumnId,
     position: clampedPosition,
   });
 
-  const reordered = withoutMoved.map((t, i) => ({ ...t, position: i }));
+  const reordered = columnTasks.map((t, i) => ({ ...t, position: i }));
+  const otherTasks = remaining.filter((t) => t.columnId !== targetColumnId);
   return otherTasks.concat(reordered);
 }

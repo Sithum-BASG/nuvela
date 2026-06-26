@@ -52,10 +52,10 @@ export function TaskCard({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isSortableDragging ? undefined : transition,
   };
 
-  const isGhost = isSortableDragging && !isDragging;
+  const isPlaceholder = isSortableDragging && !isDragging;
   const visibleAssignees = task.assignees.slice(0, 3);
   const overflowCount = task.assignees.length - visibleAssignees.length;
 
@@ -86,8 +86,8 @@ export function TaskCard({
         "transition-[opacity,box-shadow] duration-150 motion-reduce:transition-none",
         "hover:border-border/80 active:cursor-grabbing",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-        isGhost && "opacity-40",
-        dimmed && !isDragging && "opacity-45",
+        isPlaceholder && "pointer-events-none opacity-0",
+        dimmed && !isDragging && !isPlaceholder && "opacity-45",
         isDragging && "rotate-[1.5deg] shadow-lg opacity-95 cursor-grabbing",
         deleting && "pointer-events-none opacity-50",
       )}

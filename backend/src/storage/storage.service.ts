@@ -74,7 +74,7 @@ export class StorageService {
     }
 
     const data = (await res.json()) as { signedURL: string };
-    return `${this.base}${data.signedURL}`;
+    return this.toStorageUrl(data.signedURL);
   }
 
   async remove(objectPath: string): Promise<void> {
@@ -90,5 +90,16 @@ export class StorageService {
       const body = await res.text();
       this.logger.error(`Storage remove failed (${res.status}): ${body}`);
     }
+  }
+
+  private toStorageUrl(signedPath: string): string {
+    if (signedPath.startsWith('http://') || signedPath.startsWith('https://')) {
+      return signedPath;
+    }
+
+    const path = signedPath.startsWith('/storage/v1')
+      ? signedPath
+      : `/storage/v1${signedPath.startsWith('/') ? '' : '/'}${signedPath}`;
+    return new URL(path, this.base).toString();
   }
 }

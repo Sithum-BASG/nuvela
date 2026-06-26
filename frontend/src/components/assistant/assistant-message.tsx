@@ -27,7 +27,7 @@ export function AssistantMessage({
   return (
     <div
       className={cn(
-        "flex flex-col gap-1.5",
+        "flex w-full flex-col gap-1.5",
         role === "user" ? "items-end" : "items-start",
         className,
       )}
@@ -37,10 +37,10 @@ export function AssistantMessage({
       </span>
       <div
         className={cn(
-          "rounded-[12px] border px-3.5 py-3 text-[14px] leading-5 text-foreground",
+          "rounded-[14px] border px-4 py-3.5 text-[14px] leading-5 text-foreground",
           isAssistant
-            ? "w-full border-border/80 bg-surface-muted/60"
-            : "max-w-[85%] border-border bg-accent-tint",
+            ? "w-full border-border/70 bg-surface-muted/55"
+            : "max-w-[72%] border-border bg-accent-tint max-md:max-w-[85%]",
         )}
       >
         {streaming && !trimmed ? (

@@ -73,7 +73,10 @@ export function AssistantActionCard({
 
   return (
     <section
-      className={cn("rounded-[12px] border border-border bg-card p-4", className)}
+      className={cn(
+        "rounded-[14px] border border-border bg-card p-4 shadow-sm",
+        className,
+      )}
       aria-label={title}
     >
       <div className="flex items-start gap-3">
@@ -86,7 +89,7 @@ export function AssistantActionCard({
             <div className="min-w-0">
               <h3 className="text-[14px] font-medium text-foreground">{title}</h3>
               {isCreateTask ? (
-                <p className="mt-1 text-[14px] leading-5 text-foreground">
+                <p className="mt-1 text-[14px] font-medium leading-5 text-foreground">
                   {proposal.title}
                 </p>
               ) : (

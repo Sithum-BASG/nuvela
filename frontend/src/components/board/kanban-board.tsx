@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useCallback, useOptimistic, useTransition } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -56,17 +56,10 @@ export function KanbanBoard({
 
   // active drag state
   const [activeTask, setActiveTask] = useState<TaskRow | null>(null);
+  const tasksBeforeDragRef = useRef<TaskRow[]>([]);
   // detail panel
   const [selectedTask, setSelectedTask] = useState<TaskRow | null>(null);
   const [headerCreateOpen, setHeaderCreateOpen] = useState(false);
-
-  // optimistic tasks layer
-  const [optimisticTasks, setOptimisticTask] = useOptimistic(
-    tasks,
-    (prev: TaskRow[], update: TaskRow[]) => update,
-  );
-
-  const [, startTransition] = useTransition();
 
   const isPm =
     me?.role === "OWNER" ||
@@ -106,35 +99,46 @@ export function KanbanBoard({
 
   // ─── DnD sensors ──────────────────────────────────────────────────────────
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   function onDragStart(event: DragStartEvent) {
     const task = tasks.find((t) => t.id === event.active.id);
-    if (task) setActiveTask(task);
+    if (!task) return;
+    tasksBeforeDragRef.current = tasks;
+    setActiveTask(task);
+  }
+
+  function onDragCancel() {
+    setActiveTask(null);
+    setTasks(tasksBeforeDragRef.current);
   }
 
   function onDragOver(event: DragOverEvent) {
     const { active, over } = event;
     if (!over) return;
 
-    const activeTaskItem = tasks.find((t) => t.id === active.id);
-    if (!activeTaskItem) return;
+    const activeId = String(active.id);
 
-    // Determine target column: over a task → use that task's column; over a column → use column id
-    const overTask = tasks.find((t) => t.id === over.id);
-    const targetColumnId = overTask ? overTask.columnId : (over.id as string);
-    const targetColumn = columns.find((c) => c.id === targetColumnId);
-    if (targetColumn?.isPmGated && !isPm) return;
-    if (targetColumnId === activeTaskItem.columnId) return;
+    setTasks((prev) => {
+      const activeTaskItem = prev.find((t) => t.id === activeId);
+      if (!activeTaskItem) return prev;
 
-    // Optimistic column switch for smooth visual feedback
-    startTransition(() => {
-      setOptimisticTask(
-        tasks.map((t) =>
-          t.id === activeTaskItem.id ? { ...t, columnId: targetColumnId } : t,
-        ),
+      const { targetColumnId, targetPosition } = resolveDropTarget(
+        prev,
+        activeId,
+        over.id,
+      );
+      const targetColumn = columns.find((c) => c.id === targetColumnId);
+      if (targetColumn?.isPmGated && !isPm) return prev;
+      if (activeTaskItem.columnId === targetColumnId) return prev;
+
+      return applyMoveLocally(
+        prev,
+        activeId,
+        targetColumnId,
+        targetPosition,
       );
     });
   }
@@ -142,61 +146,59 @@ export function KanbanBoard({
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveTask(null);
-    if (!over) return;
+    const snapshot = tasksBeforeDragRef.current;
 
-    const activeTaskItem = tasks.find((t) => t.id === active.id);
-    if (!activeTaskItem) return;
+    if (!over) {
+      setTasks(snapshot);
+      return;
+    }
 
-    const overTask = tasks.find((t) => t.id === over.id);
-    const targetColumnId = overTask
-      ? overTask.columnId
-      : (over.id as string);
+    const activeId = String(active.id);
+    const originalTask = snapshot.find((t) => t.id === activeId);
+    if (!originalTask) {
+      setTasks(snapshot);
+      return;
+    }
+
+    const { targetColumnId, targetPosition } = resolveDropTarget(
+      tasks,
+      activeId,
+      over.id,
+    );
 
     const targetColumn = columns.find((c) => c.id === targetColumnId);
     if (targetColumn?.isPmGated && !isPm) {
+      setTasks(snapshot);
       toast.error("Only the PM can complete tasks.");
       return;
     }
 
-    // Compute target position
-    const columnTasks = tasks
-      .filter((t) => t.id !== activeTaskItem.id && t.columnId === targetColumnId)
-      .sort((a, b) => a.position - b.position);
-
-    let targetPosition = columnTasks.length;
-    if (overTask && overTask.id !== activeTaskItem.id) {
-      const overIdx = columnTasks.findIndex((t) => t.id === overTask.id);
-      targetPosition = overIdx >= 0 ? overIdx : columnTasks.length;
+    if (
+      originalTask.columnId === targetColumnId &&
+      originalTask.position === targetPosition
+    ) {
+      setTasks(snapshot);
+      return;
     }
 
-    if (activeTaskItem.columnId === targetColumnId) {
-      const currentColumn = tasks
-        .filter((t) => t.columnId === targetColumnId)
-        .sort((a, b) => a.position - b.position);
-      const currentIdx = currentColumn.findIndex((t) => t.id === activeTaskItem.id);
-      if (currentIdx === targetPosition) return;
-    }
-
-    // Optimistic update: immediately show new state in UI
     const updatedTasks = applyMoveLocally(
       tasks,
-      activeTaskItem.id,
+      activeId,
       targetColumnId,
       targetPosition,
     );
     setTasks(updatedTasks);
 
     try {
-      await tasksApi.tasks.move(activeTaskItem.id, {
+      const moved = await tasksApi.tasks.move(activeId, {
         columnId: targetColumnId,
         position: targetPosition,
       });
-      // Refresh from server to get canonical positions
-      const fresh = await tasksApi.tasks.list(projectId);
-      setTasks(fresh);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === moved.id ? moved : t)),
+      );
     } catch (err) {
-      // Rollback optimistic move
-      setTasks(tasks);
+      setTasks(snapshot);
       if (err instanceof ApiError) {
         toast.error(err.message);
         return;
@@ -262,13 +264,14 @@ export function KanbanBoard({
         onDragStart={onDragStart}
         onDragOver={onDragOver}
         onDragEnd={onDragEnd}
+        onDragCancel={onDragCancel}
       >
         <div className="flex min-h-0 flex-1 gap-4 overflow-x-auto pb-1">
           {columns.map((col) => (
             <BoardColumn
               key={col.id}
               column={col}
-              tasks={optimisticTasks.filter((t) => t.columnId === col.id)}
+              tasks={tasks.filter((t) => t.columnId === col.id)}
               isPm={isPm}
               isCollaborator={me?.role === "COLLABORATOR"}
               projectId={projectId}
@@ -284,7 +287,7 @@ export function KanbanBoard({
           ))}
         </div>
 
-        <DragOverlay>
+        <DragOverlay dropAnimation={null}>
           {activeTask ? (
             <TaskCard task={activeTask} isDragging />
           ) : null}
@@ -328,6 +331,27 @@ export function KanbanBoard({
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function resolveDropTarget(
+  tasks: TaskRow[],
+  activeId: string,
+  overId: string | number,
+): { targetColumnId: string; targetPosition: number } {
+  const overTask = tasks.find((t) => t.id === overId);
+  const targetColumnId = overTask ? overTask.columnId : String(overId);
+
+  const columnTasks = tasks
+    .filter((t) => t.id !== activeId && t.columnId === targetColumnId)
+    .sort((a, b) => a.position - b.position);
+
+  let targetPosition = columnTasks.length;
+  if (overTask && overTask.id !== activeId) {
+    const overIdx = columnTasks.findIndex((t) => t.id === overTask.id);
+    targetPosition = overIdx >= 0 ? overIdx : columnTasks.length;
+  }
+
+  return { targetColumnId, targetPosition };
+}
 
 function applyMoveLocally(
   tasks: TaskRow[],

@@ -21,9 +21,11 @@ flowchart TB
   end
 
   Resend[Resend Email]
+  NIM[NVIDIA NIM]
 
   RQ -->|HTTPS + cookies| Nest
   WSClient -->|WSS + cookies| GW
   Nest --> PG
   Nest --> Storage
   Nest --> Resend
+  Nest -->|assistant chat| NIM

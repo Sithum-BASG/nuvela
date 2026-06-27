@@ -1,0 +1,10 @@
+flowchart LR
+  U[User message] --> Ctx[Permission-aware<br/>context builder]
+  Ctx --> Model[NVIDIA NIM<br/>streamed NDJSON]
+  Model --> Reply[Assistant reply]
+  Model -.proposes.-> Action{Proposed action?}
+  Action -->|create task| C1[Confirm]
+  Action -->|post comment| C2[Confirm]
+  C1 --> Exec[Action service<br/>RBAC + org scope]
+  C2 --> Exec
+  Exec --> DB[(PostgreSQL)]

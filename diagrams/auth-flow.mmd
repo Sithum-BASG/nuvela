@@ -1,0 +1,15 @@
+sequenceDiagram
+  participant B as Browser
+  participant API as NestJS API
+  participant DB as PostgreSQL
+
+  B->>API: POST /auth/login (email, password)
+  API->>DB: verify credentials
+  API-->>B: Set-Cookie access_token + refresh_token (HttpOnly)
+  B->>API: GET /tasks (cookies sent automatically)
+  API->>API: JWT guard + RBAC + org scoping
+  API-->>B: 200 data / 401 / 403 / 404
+  Note over B,API: on access-token expiry
+  B->>API: POST /auth/refresh (refresh cookie)
+  API->>DB: validate + rotate refresh token
+  API-->>B: Set-Cookie new tokens
